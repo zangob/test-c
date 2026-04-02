@@ -89,12 +89,13 @@ export function useUpdateCheckNotification() {
       key: 'update-available',
       jsx: (
         <>
-          <Text color="yellow">New Update available!</Text>
+          <Text color="yellow">New Update available .</Text>
           <Text dimColor={true}> Run /update to apply</Text>
         </>
       ),
       priority: 'low',
-      timeoutMs: 15000,
+      color: 'warning',
+      timeoutMs: 150000,
     })
 
     logForDebugging(
