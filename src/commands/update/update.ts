@@ -26,7 +26,7 @@ export async function call(
     if (behindCount === '0') {
       return {
         type: 'text',
-        value: 'Open Claude Code is already up-to-date.',
+        value: 'Open Claude Code is already up to date.',
       }
     }
 
