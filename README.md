@@ -30,11 +30,11 @@ Run the update command from any terminal:
 ```bash
 open-claude update
 # or
-open-claude upgrade
+/update
 ```
 
 This command will automatically:
-- Pull the latest changes from the GitLab repository
+- Pull the latest changes from the main repository
 - Rebuild the project
 - Restart with the latest version
 
@@ -56,7 +56,7 @@ open-claude --help             # Show all options
 open-claude --version          # Show version
 open-claude -p "your prompt"   # Non-interactive mode
 open-claude auth login         # Authenticate
-open-claude --model moonshotai/kimi-k2.5 # Use specify model
+open-claude --model z-ai/glm5  # Use specify model
 
 ```
 
@@ -72,7 +72,7 @@ setx ANTHROPIC_API_KEY "sk-blaze-your-key-here"
 setx ANTHROPIC_AUTH_TOKEN "sk-blaze-your-key-here"
 ```
 
-**Replace sk-blaze-your-key-here with the API key you received from BlazeAI.**
+**Replace `sk-blaze-your-key-here` with the API key you received from BlazeAI.**
 
 **3. After the environment variables are set, start the application by running:** `open-claude`
    
