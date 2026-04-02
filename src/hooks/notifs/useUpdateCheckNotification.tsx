@@ -90,11 +90,6 @@ export function useUpdateCheckNotification() {
       jsx: (
         <>
           <Text color="yellow">New Update available!</Text>
-          <Text dimColor={true}>
-            {' '}
-            {updateInfo.behindCount} commit(s) behind · Latest:{' '}
-            {updateInfo.latestCommit}
-          </Text>
           <Text dimColor={true}> Run /update to apply</Text>
         </>
       ),
