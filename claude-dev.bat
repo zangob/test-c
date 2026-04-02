@@ -4,5 +4,4 @@
 :: Can be run from any directory
 
 set "SCRIPT_DIR=%~dp0"
-cd /d "%SCRIPT_DIR%"
-bun "dev.ts" %*
+bun "%SCRIPT_DIR%dev.ts" %*
