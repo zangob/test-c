@@ -5,7 +5,8 @@
   "private": true,
   "bin": {
     "claude-code": "./dist/cli.js",
-    "open-claude": "./dist/cli.js"
+    "open-claude": "./dist/cli.js",
+    "claude-dev": "./claude-dev.bat"
   },
   "dependencies": {
     "@alcalzone/ansi-tokenize": "^0.1.0",
@@ -114,7 +115,7 @@
     "typescript": "^5.7.0"
   },
   "scripts": {
-    "build": "bun build.ts && bun dist/cli.js",
+    "build": "bun build.ts && bun link && bun dist/cli.js",
     "start": "bun dist/cli.js",
     "dev": "bun dev.ts",
     "typecheck": "tsc --noEmit"
