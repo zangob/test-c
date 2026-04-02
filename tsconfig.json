@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ],
+      "bun:bundle": [
+        "./shims/bun-bundle.d.ts"
+      ],
+      "@ant/claude-for-chrome-mcp": [
+        "./stubs/@ant/claude-for-chrome-mcp/src/index.ts"
+      ],
+      "@ant/claude-for-chrome-mcp/*": [
+        "./stubs/@ant/claude-for-chrome-mcp/src/*"
+      ],
+      "@ant/computer-use-mcp": [
+        "./stubs/@ant/computer-use-mcp/src/index.ts"
+      ],
+      "@ant/computer-use-mcp/*": [
+        "./stubs/@ant/computer-use-mcp/src/*"
+      ],
+      "@ant/computer-use-swift": [
+        "./stubs/@ant/computer-use-swift/js/index.js"
+      ],
+      "@ant/computer-use-input": [
+        "./stubs/@ant/computer-use-input/js/index.js"
+      ],
+    },
+    "types": [
+      "bun-types"
+    ]
+  },
+  "include": [
+    "src/**/*",
+    "shims/**/*",
+    "stubs/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

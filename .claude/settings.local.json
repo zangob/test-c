@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run:*)",
+      "Bash(grep -r buddy src/commands/ --include=*.ts --include=*.tsx -l)",
+      "Bash(grep -r companion src/ --include=*.ts --include=*.tsx -l)",
+      "Bash(find src/commands -type f -name *.tsx -exec grep -l \"register\\\\|command\" {})",
+      "Bash(2)",
+      "Bash(ls -la src/*.ts)",
+      "Bash(grep -r \"registerCommand\\\\|slash.*command\" src/*.ts)",
+      "Bash(sed -i '118,123d' src/commands.ts)",
+      "Bash(sed -i '117a// BUDDY enabled - companion featureconst buddy = \\(  require\\(\"\"./commands/buddy/index.js\"\"\\) as typeof import\\(\"\"./commands/buddy/index.js\"\"\\)\\).default' src/commands.ts)",
+      "Bash(grep -r TextInput src/components --include=*.ts --include=*.tsx -l)",
+      "Bash(bun dist/cli.js)",
+      "Bash(bun dist/cli.js --help)",
+      "Bash(node dist/cli.js --version)",
+      "Bash(echo \"Node exit code: $?\")",
+      "Bash(bash -c \"./dist/cli.js --version\" 2>&1)",
+      "Bash(bun --version)",
+      "Bash(grep -ri \"password\\\\|secret\\\\|api.*key\\\\|token\\\\|credential\\\\|auth\" src --include=*.ts --include=*.tsx)",
+      "Bash(grep -ri \"exec\\\\|spawn\\\\|child_process\\\\|eval\" src --include=*.ts --include=*.tsx)",
+      "Bash(grep -ri \"innerHTML\\\\|dangerouslySetInnerHTML\" src --include=*.ts --include=*.tsx)",
+      "Bash(grep -ri \"csrf\\\\|cors\\\\|x-frame\\\\|content-security\\\\|hsts\" src --include=*.ts --include=*.tsx)",
+      "Bash(grep -ri https?:// src --include=*.ts --include=*.tsx -n)",
+      "Bash(grep -ri \"window\\\\.__\\\\|document\\\\.__\\\\|localStorage\\\\|sessionStorage\" src --include=*.ts --include=*.tsx)",
+      "Bash(grep -ri process.env src --include=*.ts --include=*.tsx)",
+      "Bash(find . -type f -name *.ts -o -name *.tsx)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -ri \"ssrf\\\\|url\\\\|http\\\\|fetch\" src --include=*.ts --include=*.tsx)",
+      "Bash(find src:*)",
+      "Bash(grep -ri \"crypto\\\\|encrypt\\\\|decrypt\\\\|hash\\\\|jwt\" src --include=*.ts --include=*.tsx)",
+      "Bash(grep -ri \"ssrf\\\\|file://\\\\|gopher://\\\\|ftp://\\\\|SFTP\" src --include=*.ts --include=*.tsx)",
+      "Bash(ls -la src/native/*/color-diff*)",
+      "Bash(sed -i '4362,4367d' src/main.tsx)",
+      "Bash(sed -i '4361a\\\\program.command\\('\\\\''update'\\\\''\\)'\\\\''.alias\\('\\\\''upgrade'\\\\''\\)'\\\\''.description\\('\\\\''Run update.bat to pull latest changes from GitLab and rebuild'\\\\''\\)'\\\\''.action\\(async \\(\\) => {\\\\n  const { execSync } = require\\('\\\\''child_process'\\\\''\\);\\\\n  const { resolve } = require\\('\\\\''path'\\\\''\\);\\\\n  try {\\\\n    const updateScript = resolve\\(process.cwd\\(\\), '\\\\''update.bat'\\\\''\\);\\\\n    execSync\\(`cmd /c \"${updateScript}\"`, {\\\\n      stdio: '\\\\''inherit'\\\\'',\\\\n      cwd: process.cwd\\(\\),\\\\n    }\\);\\\\n  } catch \\(error\\) {\\\\n    console.error\\(`Failed to run update script: ${error}`\\);\\\\n    // eslint-disable-next-line custom-rules/no-process-exit\\\\n    process.exit\\(1\\);\\\\n  }\\\\n}\\);' src/main.tsx)"
+    ]
+  }
+}

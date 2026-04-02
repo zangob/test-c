@@ -1,0 +1,1 @@
+## placeholdersrc/skills/bundled/verify/SKILL.md
