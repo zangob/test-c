@@ -1,19 +1,62 @@
-import type { LocalCommandCall } from '../../types/command.js'
 import { execSync } from 'child_process'
 import { resolve } from 'path'
+import type { ToolUseContext } from '../../Tool.js'
+import type { LocalCommandResult } from '../../types/command.js'
 
-export const call: LocalCommandCall = async (_args, _context) => {
+export async function call(
+  _args: string,
+  _context: ToolUseContext,
+): Promise<LocalCommandResult> {
+  const cwd = process.cwd()
+
   try {
-    const updateScript = resolve(process.cwd(), 'update.bat')
-
-    // Run the update.bat script synchronously so user can see output
-    execSync(`cmd /c "${updateScript}"`, {
-      stdio: 'inherit',
-      cwd: process.cwd(),
+    // Fetch updates from origin
+    execSync('git fetch origin', {
+      cwd,
+      stdio: 'pipe',
     })
 
-    return { type: 'text', value: 'Update completed successfully!' }
+    // Get the number of commits behind origin/main
+    const behindCount = execSync('git rev-list HEAD..origin/main --count', {
+      cwd,
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    }).trim()
+
+    if (behindCount === '0') {
+      return {
+        type: 'text',
+        value: 'Open Claude Code is already up-to-date.',
+      }
+    }
+
+    // Get latest commit message
+    const latestCommit = execSync(
+      'git log -1 --pretty=format:"%h - %s" origin/main',
+      {
+        cwd,
+        encoding: 'utf-8',
+        stdio: 'pipe',
+      },
+    ).trim()
+
+    // Show update available message with commit info
+    console.log(`Update available!`)
+    console.log(`New Update: ${latestCommit}`)
+    console.log('Running update...')
+
+    // Run the update.bat script synchronously so user can see output
+    const updateScript = resolve(cwd, 'update.bat')
+    execSync(`cmd /c "${updateScript}"`, {
+      stdio: 'inherit',
+      cwd,
+    })
+
+    return { type: 'text', value: '' }
   } catch (error) {
-    return { type: 'text', value: `Failed to run update script: ${error}` }
+    return {
+      type: 'text',
+      value: `Failed to check for updates or run update: ${error}`,
+    }
   }
 }
