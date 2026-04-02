@@ -1,4 +1,4 @@
-import { isModifierPressed as mockIsModifierPressed } from '../../mocks/modifiers-napi.js'
+import { isModifierPressed as mockIsModifierPressed } from '../../mocks/modifiers-napi'
 
 export type ModifierKey = 'shift' | 'command' | 'control' | 'option'
 
