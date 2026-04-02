@@ -114,8 +114,9 @@
     "typescript": "^5.7.0"
   },
   "scripts": {
-    "build": "bun build.ts",
+    "build": "bun build.ts && bun dist/cli.js",
     "start": "bun dist/cli.js",
+    "dev": "bun dev.ts",
     "typecheck": "tsc --noEmit"
   }
 }
