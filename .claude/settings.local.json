@@ -34,7 +34,12 @@
       "Bash(sed -i '4362,4367d' src/main.tsx)",
       "Bash(sed -i '4361a\\\\program.command\\('\\\\''update'\\\\''\\)'\\\\''.alias\\('\\\\''upgrade'\\\\''\\)'\\\\''.description\\('\\\\''Run update.bat to pull latest changes from GitLab and rebuild'\\\\''\\)'\\\\''.action\\(async \\(\\) => {\\\\n  const { execSync } = require\\('\\\\''child_process'\\\\''\\);\\\\n  const { resolve } = require\\('\\\\''path'\\\\''\\);\\\\n  try {\\\\n    const updateScript = resolve\\(process.cwd\\(\\), '\\\\''update.bat'\\\\''\\);\\\\n    execSync\\(`cmd /c \"${updateScript}\"`, {\\\\n      stdio: '\\\\''inherit'\\\\'',\\\\n      cwd: process.cwd\\(\\),\\\\n    }\\);\\\\n  } catch \\(error\\) {\\\\n    console.error\\(`Failed to run update script: ${error}`\\);\\\\n    // eslint-disable-next-line custom-rules/no-process-exit\\\\n    process.exit\\(1\\);\\\\n  }\\\\n}\\);' src/main.tsx)",
       "Bash(ls -la src/hooks/notifs/useUpdateCheckNotification.*)",
-      "Bash(echo \"Exit code: $?\")"
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node:*)",
+      "Bash(git checkout:*)",
+      "Bash(ls -la *.md)"
     ]
   }
 }

@@ -80,6 +80,110 @@ setx ANTHROPIC_AUTH_TOKEN "sk-blaze-your-key-here"
 
 > **The project will now use the custom BlazeAI API endpoint for Open Claude Code.**
 
+---
+
+## Using Z.ai / GLM Models
+
+Open Claude Code now supports **Z.ai** as a first-class provider, allowing you to use GLM models through their Anthropic-compatible API.
+
+### Available Models
+
+When using Z.ai, the following models are available:
+- **GLM 5** (default) - Most capable model for complex tasks
+- **GLM 4.7** - Previous generation model
+
+### Setup Instructions
+
+#### Method 1: Using CLAUDE_CODE_USE_ZAI (Recommended)
+
+1. **Get your Z.ai API Key** from [Z.AI Open Platform](https://z.ai/model-api):
+   - Register or log in to your Z.ai account
+   - Navigate to [API Keys](https://z.ai/manage-apikey/apikey-list) management page
+   - Create a new API key and copy it
+
+2. **Configure environment variables:**
+
+   **Windows (Command Prompt):**
+   ```cmd
+   setx CLAUDE_CODE_USE_ZAI "1"
+   setx ZAI_API_KEY "your-zai-api-key-here"
+   ```
+
+#### Method 2: Using settings.json
+
+Create or edit `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_USE_ZAI": "1",
+    "ZAI_API_KEY": "your-zai-api-key-here"
+  }
+}
+```
+
+#### Method 3: Using ANTHROPIC-compatible variables
+
+If you prefer, you can also use the standard Anthropic environment variables:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "your-zai-api-key-here",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"
+  }
+}
+```
+
+### Verifying Z.ai Connection
+
+After starting Open Claude Code with Z.ai configured:
+
+1. Run `/models` to see available models (should show GLM 5 and GLM 4.7)
+2. The default model will be GLM 5
+3. All requests are routed through `https://api.z.ai/api/anthropic`
+
+### Notes
+
+- When `CLAUDE_CODE_USE_ZAI=1` is set, OAuth is automatically disabled and API key authentication is used
+- The `ZAI_API_KEY` takes priority over `ANTHROPIC_AUTH_TOKEN` when using the Z.ai provider
+- GLM models will appear as the only available options when using Z.ai (Claude/GPT/Kimi models are filtered out)
+
+---
+
+## Supported Models
+
+Open Claude Code supports the following AI models from various providers:
+
+| Model ID | Provider | Description |
+|----------|----------|-------------|
+| claude-sonnet-4-6 | Anthropic | Best for everyday tasks |
+| claude-opus-4-6 | Anthropic | Most capable for complex work |
+| claude-haiku-4-5 | Anthropic | Fastest for quick answers |
+| openai/gpt5.3-codex | OpenAI | Specialized for coding tasks |
+| openai/gpt-5.4 | OpenAI | Latest GPT model |
+| openai/gpt-5.1 | OpenAI | Efficient GPT model |
+| openai/gpt-oss-120b | OpenAI | Open source 120B parameter model |
+| z-ai/glm5 | Z-AI / GLM | General language model |
+| glm-5 | Z-AI / GLM | General language model |
+| glm-5-turbo | Z-AI / GLM | Fast and efficient model |
+| glm-4.7 | Z-AI / GLM | Previous generation model |
+| moonshotai/kimi-k2.5 | Moonshot AI | Most capable for complex coding |
+| minimaxai/minimax-m2.5 | MiniMax | Efficient language model |
+
+### Model Selection
+
+Use the `/model` command in the REPL to switch between models:
+
+```
+/model claude-sonnet-4-6    # Use Claude Sonnet
+/model openai/gpt-5.1	    # Use GPT 5.1
+/model z-ai/glm5            # Use GLM 5
+/model moonshotai/kimi-k2.5	# Use Kimi K2.5 
+```
+
+---
+
 ### Architecture
 
 ```

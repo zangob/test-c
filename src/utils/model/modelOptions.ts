@@ -236,12 +236,66 @@ function getGpt54Option(): ModelOption {
   }
 }
 
+function getGpt51Option(): ModelOption {
+  return {
+    value: 'gpt51',
+    label: 'GPT 5.1',
+    description: 'OpenAI · Efficient GPT model',
+    descriptionForModel: 'GPT 5.1 - Efficient GPT model from OpenAI',
+  }
+}
+
+function getGptOss120bOption(): ModelOption {
+  return {
+    value: 'gptoss120b',
+    label: 'GPT OSS 120B',
+    description: 'OpenAI · Open source 120B model',
+    descriptionForModel: 'GPT OSS 120B - Open source 120B parameter model from OpenAI',
+  }
+}
+
 function getGlm5Option(): ModelOption {
   return {
     value: 'glm5',
     label: 'GLM 5',
     description: 'Z-AI · General language model',
     descriptionForModel: 'GLM 5 - General language model',
+  }
+}
+
+function getGlm5TurboOption(): ModelOption {
+  return {
+    value: 'glm5turbo',
+    label: 'GLM 5 Turbo',
+    description: 'Z-AI · Fast and efficient model',
+    descriptionForModel: 'GLM 5 Turbo - Fast and efficient language model from Z-AI',
+  }
+}
+
+function getGlm47Option(): ModelOption {
+  return {
+    value: 'glm47',
+    label: 'GLM 4.7',
+    description: 'Z-AI · Previous generation model',
+    descriptionForModel: 'GLM 4.7 - Previous generation language model from Z-AI',
+  }
+}
+
+function getGlm45Option(): ModelOption {
+  return {
+    value: 'glm45',
+    label: 'GLM 4.5',
+    description: 'Z-AI · Standard generation model',
+    descriptionForModel: 'GLM 4.5 - Standard generation language model from Z-AI',
+  }
+}
+
+function getGlm45AirOption(): ModelOption {
+  return {
+    value: 'glm45air',
+    label: 'GLM 4.5 Air',
+    description: 'Z-AI · Faster, lighter generation model',
+    descriptionForModel: 'GLM 4.5 Air - Lighter and faster language model from Z-AI',
   }
 }
 
@@ -314,6 +368,22 @@ function getOpusPlanOption(): ModelOption {
 // @[MODEL LAUNCH]: Update the model picker lists below to include/reorder options for the new model.
 // Each user tier (ant, Max/Team Premium, Pro/Team Standard/Enterprise, PAYG 1P, PAYG 3P) has its own list.
 function getModelOptionsBase(fastMode = false): ModelOption[] {
+  // Z.ai provider: only show GLM models
+  if (getAPIProvider() === 'zai') {
+    return [
+      {
+        value: null,
+        label: 'Default (recommended)',
+        description: 'Use the default model (GLM 5)',
+      },
+      getGlm5Option(),
+      getGlm5TurboOption(),
+      getGlm47Option(),
+      getGlm45Option(),
+      getGlm45AirOption(),
+    ]
+  }
+
   if (process.env.USER_TYPE === 'ant') {
     // Build options from antModels config
     const antModelOptions: ModelOption[] = getAntModels().map(m => ({
@@ -386,8 +456,10 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
     payg1POptions.push(getKimiK25Option())
     payg1POptions.push(getGpt53CodexOption())
     payg1POptions.push(getGpt54Option())
-    payg1POptions.push(getGlm5Option())
-    payg1POptions.push(getMinimaxM25Option())
+  payg1POptions.push(getGpt51Option())
+  payg1POptions.push(getGptOss120bOption())
+  payg1POptions.push(getGlm5Option())
+  payg1POptions.push(getMinimaxM25Option())
     return payg1POptions
   }
 
@@ -398,6 +470,8 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
   payg3pOptions.push(getKimiK25Option())
   payg3pOptions.push(getGpt53CodexOption())
   payg3pOptions.push(getGpt54Option())
+  payg3pOptions.push(getGpt51Option())
+  payg3pOptions.push(getGptOss120bOption())
   payg3pOptions.push(getGlm5Option())
   payg3pOptions.push(getMinimaxM25Option())
 

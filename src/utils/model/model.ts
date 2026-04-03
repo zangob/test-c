@@ -176,6 +176,11 @@ export function getRuntimeMainLoopModel(params: {
  * @returns The default model setting to use
  */
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
+  // Z.ai provider defaults to GLM-5
+  if (getAPIProvider() === 'zai') {
+    return getModelStrings().zAiGlm5
+  }
+
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
   if (process.env.USER_TYPE === 'ant') {
     return (
@@ -383,9 +388,21 @@ export function getPublicModelDisplayName(model: ModelName): string | null {
     case getModelStrings().openaiGpt53Codex:
       return 'GPT 5.3 Codex'
     case getModelStrings().openaiGpt54:
-      return 'GPT 5.4'
-    case getModelStrings().zAiGlm5:
+        return 'GPT 5.4'
+      case getModelStrings().openaiGpt51:
+        return 'GPT 5.1'
+      case getModelStrings().openaiGptOss120b:
+        return 'GPT OSS 120B'
+      case getModelStrings().zAiGlm5:
       return 'GLM 5'
+    case getModelStrings().zAiGlm5Turbo:
+      return 'GLM 5 Turbo'
+    case getModelStrings().zAiGlm47:
+      return 'GLM 4.7'
+    case getModelStrings().zAiGlm45:
+      return 'GLM 4.5'
+    case getModelStrings().zAiGlm45Air:
+      return 'GLM 4.5 Air'
     case getModelStrings().minimaxM25:
       return 'MiniMax M2.5'
     default:
@@ -481,8 +498,20 @@ export function parseUserSpecifiedModel(
         return getModelStrings().openaiGpt53Codex
       case 'gpt54':
         return getModelStrings().openaiGpt54
+      case 'gpt51':
+        return getModelStrings().openaiGpt51
+      case 'gptoss120b':
+        return getModelStrings().openaiGptOss120b
       case 'glm5':
         return getModelStrings().zAiGlm5
+      case 'glm5turbo':
+        return getModelStrings().zAiGlm5Turbo
+      case 'glm47':
+        return getModelStrings().zAiGlm47
+      case 'glm45':
+        return getModelStrings().zAiGlm45
+      case 'glm45air':
+        return getModelStrings().zAiGlm45Air
       case 'minimax':
         return getModelStrings().minimaxM25
       default:
@@ -638,8 +667,26 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
   if (canonical.includes('gpt-5.4') || canonical.includes('gpt54')) {
     return 'GPT 5.4'
   }
-  if (canonical.includes('glm5')) {
+  if (canonical.includes('gpt-5.1') || canonical.includes('gpt51')) {
+    return 'GPT 5.1'
+  }
+  if (canonical.includes('gpt-oss-120b') || canonical.includes('gptoss120b')) {
+    return 'GPT OSS 120B'
+  }
+  if (canonical.includes('glm5') || canonical.includes('glm-5')) {
     return 'GLM 5'
+  }
+  if (canonical.includes('glm-5-turbo') || canonical.includes('glm5turbo')) {
+    return 'GLM 5 Turbo'
+  }
+  if (canonical.includes('glm-4.7') || canonical.includes('glm47')) {
+    return 'GLM 4.7'
+  }
+  if (canonical.includes('glm-4.5-air') || canonical.includes('glm45air')) {
+    return 'GLM 4.5 Air'
+  }
+  if (canonical.includes('glm-4.5') || canonical.includes('glm45')) {
+    return 'GLM 4.5'
   }
   if (canonical.includes('minimax')) {
     return 'MiniMax M2.5'

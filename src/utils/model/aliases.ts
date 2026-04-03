@@ -9,7 +9,13 @@ export const MODEL_ALIASES = [
   'kimi',
   'gpt53codex',
   'gpt54',
+  'gpt51',
+  'gptoss120b',
   'glm5',
+  'glm5turbo',
+  'glm47',
+  'glm45',
+  'glm45air',
   'minimax',
 ] as const
 export type ModelAlias = (typeof MODEL_ALIASES)[number]

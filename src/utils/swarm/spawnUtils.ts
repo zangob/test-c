@@ -99,6 +99,8 @@ const TEAMMATE_ENV_VARS = [
   'CLAUDE_CODE_USE_BEDROCK',
   'CLAUDE_CODE_USE_VERTEX',
   'CLAUDE_CODE_USE_FOUNDRY',
+  'CLAUDE_CODE_USE_ZAI',
+  'ZAI_API_KEY',
   // Custom API endpoint
   'ANTHROPIC_BASE_URL',
   // Config directory override

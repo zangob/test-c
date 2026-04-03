@@ -11,6 +11,7 @@ export const CLAUDE_3_7_SONNET_CONFIG = {
   bedrock: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
   vertex: 'claude-3-7-sonnet@20250219',
   foundry: 'claude-3-7-sonnet',
+  zai: 'claude-3-7-sonnet-20250219',
 } as const satisfies ModelConfig
 
 export const CLAUDE_3_5_V2_SONNET_CONFIG = {
@@ -18,6 +19,7 @@ export const CLAUDE_3_5_V2_SONNET_CONFIG = {
   bedrock: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
   vertex: 'claude-3-5-sonnet-v2@20241022',
   foundry: 'claude-3-5-sonnet',
+  zai: 'claude-3-5-sonnet-20241022',
 } as const satisfies ModelConfig
 
 export const CLAUDE_3_5_HAIKU_CONFIG = {
@@ -25,6 +27,7 @@ export const CLAUDE_3_5_HAIKU_CONFIG = {
   bedrock: 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
   vertex: 'claude-3-5-haiku@20241022',
   foundry: 'claude-3-5-haiku',
+  zai: 'claude-3-5-haiku-20241022',
 } as const satisfies ModelConfig
 
 export const CLAUDE_HAIKU_4_5_CONFIG = {
@@ -32,6 +35,7 @@ export const CLAUDE_HAIKU_4_5_CONFIG = {
   bedrock: 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
   vertex: 'claude-haiku-4-5@20251001',
   foundry: 'claude-haiku-4-5',
+  zai: 'claude-haiku-4-5-20251001',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_CONFIG = {
@@ -39,6 +43,7 @@ export const CLAUDE_SONNET_4_CONFIG = {
   bedrock: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
   vertex: 'claude-sonnet-4@20250514',
   foundry: 'claude-sonnet-4',
+  zai: 'claude-sonnet-4-20250514',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_5_CONFIG = {
@@ -46,6 +51,7 @@ export const CLAUDE_SONNET_4_5_CONFIG = {
   bedrock: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
   vertex: 'claude-sonnet-4-5@20250929',
   foundry: 'claude-sonnet-4-5',
+  zai: 'claude-sonnet-4-5-20250929',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_CONFIG = {
@@ -53,6 +59,7 @@ export const CLAUDE_OPUS_4_CONFIG = {
   bedrock: 'us.anthropic.claude-opus-4-20250514-v1:0',
   vertex: 'claude-opus-4@20250514',
   foundry: 'claude-opus-4',
+  zai: 'claude-opus-4-20250514',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_1_CONFIG = {
@@ -60,6 +67,7 @@ export const CLAUDE_OPUS_4_1_CONFIG = {
   bedrock: 'us.anthropic.claude-opus-4-1-20250805-v1:0',
   vertex: 'claude-opus-4-1@20250805',
   foundry: 'claude-opus-4-1',
+  zai: 'claude-opus-4-1-20250805',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_5_CONFIG = {
@@ -67,6 +75,7 @@ export const CLAUDE_OPUS_4_5_CONFIG = {
   bedrock: 'us.anthropic.claude-opus-4-5-20251101-v1:0',
   vertex: 'claude-opus-4-5@20251101',
   foundry: 'claude-opus-4-5',
+  zai: 'claude-opus-4-5-20251101',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_6_CONFIG = {
@@ -74,6 +83,7 @@ export const CLAUDE_OPUS_4_6_CONFIG = {
   bedrock: 'us.anthropic.claude-opus-4-6-v1',
   vertex: 'claude-opus-4-6',
   foundry: 'claude-opus-4-6',
+  zai: 'claude-opus-4-6',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_6_CONFIG = {
@@ -81,6 +91,7 @@ export const CLAUDE_SONNET_4_6_CONFIG = {
   bedrock: 'us.anthropic.claude-sonnet-4-6',
   vertex: 'claude-sonnet-4-6',
   foundry: 'claude-sonnet-4-6',
+  zai: 'claude-sonnet-4-6',
 } as const satisfies ModelConfig
 
 export const KIMI_K2_5_CONFIG = {
@@ -88,6 +99,7 @@ export const KIMI_K2_5_CONFIG = {
   bedrock: 'moonshotai/kimi-k2.5',
   vertex: 'moonshotai/kimi-k2.5',
   foundry: 'moonshotai/kimi-k2.5',
+  zai: 'moonshotai/kimi-k2.5',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_3_CODEX_CONFIG = {
@@ -95,6 +107,7 @@ export const OPENAI_GPT_5_3_CODEX_CONFIG = {
   bedrock: 'openai/gpt5.3-codex',
   vertex: 'openai/gpt5.3-codex',
   foundry: 'openai/gpt5.3-codex',
+  zai: 'openai/gpt5.3-codex',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_4_CONFIG = {
@@ -102,6 +115,23 @@ export const OPENAI_GPT_5_4_CONFIG = {
   bedrock: 'openai/gpt-5.4',
   vertex: 'openai/gpt-5.4',
   foundry: 'openai/gpt-5.4',
+  zai: 'openai/gpt-5.4',
+} as const satisfies ModelConfig
+
+export const OPENAI_GPT_5_1_CONFIG = {
+  firstParty: 'openai/gpt-5.1',
+  bedrock: 'openai/gpt-5.1',
+  vertex: 'openai/gpt-5.1',
+  foundry: 'openai/gpt-5.1',
+  zai: 'openai/gpt-5.1',
+} as const satisfies ModelConfig
+
+export const OPENAI_GPT_OSS_120B_CONFIG = {
+  firstParty: 'openai/gpt-oss-120b',
+  bedrock: 'openai/gpt-oss-120b',
+  vertex: 'openai/gpt-oss-120b',
+  foundry: 'openai/gpt-oss-120b',
+  zai: 'openai/gpt-oss-120b',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM5_CONFIG = {
@@ -109,6 +139,39 @@ export const Z_AI_GLM5_CONFIG = {
   bedrock: 'z-ai/glm5',
   vertex: 'z-ai/glm5',
   foundry: 'z-ai/glm5',
+  zai: 'glm-5',
+} as const satisfies ModelConfig
+
+export const Z_AI_GLM4_7_CONFIG = {
+  firstParty: 'glm-4.7',
+  bedrock: 'glm-4.7',
+  vertex: 'glm-4.7',
+  foundry: 'glm-4.7',
+  zai: 'glm-4.7',
+} as const satisfies ModelConfig
+
+export const Z_AI_GLM5_TURBO_CONFIG = {
+  firstParty: 'glm-5-turbo',
+  bedrock: 'glm-5-turbo',
+  vertex: 'glm-5-turbo',
+  foundry: 'glm-5-turbo',
+  zai: 'glm-5-turbo',
+} as const satisfies ModelConfig
+
+export const Z_AI_GLM4_5_CONFIG = {
+  firstParty: 'glm-4.5',
+  bedrock: 'glm-4.5',
+  vertex: 'glm-4.5',
+  foundry: 'glm-4.5',
+  zai: 'glm-4.5',
+} as const satisfies ModelConfig
+
+export const Z_AI_GLM4_5_AIR_CONFIG = {
+  firstParty: 'glm-4.5-Air',
+  bedrock: 'glm-4.5-Air',
+  vertex: 'glm-4.5-Air',
+  foundry: 'glm-4.5-Air',
+  zai: 'glm-4.5-Air',
 } as const satisfies ModelConfig
 
 export const MINIMAX_M2_5_CONFIG = {
@@ -116,6 +179,7 @@ export const MINIMAX_M2_5_CONFIG = {
   bedrock: 'minimaxai/minimax-m2.5',
   vertex: 'minimaxai/minimax-m2.5',
   foundry: 'minimaxai/minimax-m2.5',
+  zai: 'minimaxai/minimax-m2.5',
 } as const satisfies ModelConfig
 
 // @[MODEL LAUNCH]: Register the new config here.
@@ -123,7 +187,13 @@ export const ALL_MODEL_CONFIGS = {
   kimiK25: KIMI_K2_5_CONFIG,
   openaiGpt53Codex: OPENAI_GPT_5_3_CODEX_CONFIG,
   openaiGpt54: OPENAI_GPT_5_4_CONFIG,
+  openaiGpt51: OPENAI_GPT_5_1_CONFIG,
+  openaiGptOss120b: OPENAI_GPT_OSS_120B_CONFIG,
   zAiGlm5: Z_AI_GLM5_CONFIG,
+  zAiGlm5Turbo: Z_AI_GLM5_TURBO_CONFIG,
+  zAiGlm47: Z_AI_GLM4_7_CONFIG,
+  zAiGlm45: Z_AI_GLM4_5_CONFIG,
+  zAiGlm45Air: Z_AI_GLM4_5_AIR_CONFIG,
   minimaxM25: MINIMAX_M2_5_CONFIG,
   haiku35: CLAUDE_3_5_HAIKU_CONFIG,
   haiku45: CLAUDE_HAIKU_4_5_CONFIG,

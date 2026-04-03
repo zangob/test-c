@@ -132,6 +132,7 @@ export async function getAnthropicClient({
   await checkAndRefreshOAuthTokenIfNeeded()
   logForDebugging('[API:auth] OAuth token check complete')
 
+  // Configure API key headers (for Z.ai this will be overridden with authToken below)
   if (!isClaudeAISubscriber()) {
     await configureApiKeyHeaders(defaultHeaders, getIsNonInteractiveSession())
   }
@@ -149,6 +150,23 @@ export async function getAnthropicClient({
     ...(resolvedFetch && {
       fetch: resolvedFetch,
     }),
+  }
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_ZAI)) {
+    const zaiApiKey = process.env.ZAI_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey
+    const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+      apiKey: zaiApiKey || '',
+      baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.z.ai/api/anthropic',
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+      dangerouslyAllowBrowser: true,
+      fetchOptions: getProxyFetchOptions({
+        forAnthropicAPI: true,
+      }) as ClientOptions['fetchOptions'],
+      ...(resolvedFetch && { fetch: resolvedFetch }),
+      ...(isDebugToStdErr() && { logger: createStderrLogger() }),
+    }
+    return new Anthropic(clientConfig)
   }
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK)) {
     const { AnthropicBedrock } = await import('@anthropic-ai/bedrock-sdk')
