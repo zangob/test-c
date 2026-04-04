@@ -1,6 +1,6 @@
 {
   "name": "open-claude-code",
-  "version": "2.1.88.2",
+  "version": "2.1.88.4",
   "type": "module",
   "private": true,
   "bin": {

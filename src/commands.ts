@@ -223,20 +223,18 @@ export type {
 export { getCommandName, isCommandEnabled } from './types/command.js'
 
 // Commands that get eliminated from the external build
+// Note: commit, commitPushPr, initVerifiers, and version have been moved to
+// the public COMMANDS array below since they are useful for all users.
 export const INTERNAL_ONLY_COMMANDS = [
   backfillSessions,
   breakCache,
   bughunter,
-  commit,
-  commitPushPr,
   ctx_viz,
   goodClaude,
   issue,
-  initVerifiers,
   ...(forceSnip ? [forceSnip] : []),
   mockLimits,
   bridgeKick,
-  version,
   ...(ultraplan ? [ultraplan] : []),
   ...(subscribePr ? [subscribePr] : []),
   resetLimits,
@@ -319,6 +317,10 @@ const COMMANDS = memoize((): Command[] => [
   usage,
   usageReport,
   vim,
+  commit,
+  commitPushPr,
+  initVerifiers,
+  version,
   ...(webCmd ? [webCmd] : []),
   ...(forkCmd ? [forkCmd] : []),
   ...(buddy ? [buddy] : []),

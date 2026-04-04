@@ -78,6 +78,18 @@ import { pathInWorkingPath } from './permissions/filesystem.js'
 import { isSettingSourceEnabled } from './settings/constants.js'
 import { getInitialSettings } from './settings/settings.js'
 
+// Maximum characters per individual CLAUDE.md file.
+// Previously unbounded — very large files consumed excessive context on every
+// API call. 10K chars (~2.5K tokens) is generous enough for most instruction
+// files while preventing runaway context usage.
+const MAX_CLAUDE_MD_CHARS_PER_FILE = 10_000
+
+// Maximum total characters for all CLAUDE.md content combined.
+// Even with many files, the aggregate context injected into every API call
+// must be bounded. 30K chars (~7.5K tokens) accommodates multiple files
+// while leaving room for conversation history, tool results, and system prompts.
+const MAX_CLAUDE_MD_TOTAL_CHARS = 30_000
+
 /* eslint-disable @typescript-eslint/no-require-imports */
 const teamMemPaths = feature('TEAMMEM')
   ? (require('../memdir/teamMemPaths.js') as typeof import('../memdir/teamMemPaths.js'))
@@ -1160,11 +1172,22 @@ export const getClaudeMds = (
     false,
   )
 
+  let totalChars = 0
+
   for (const file of memoryFiles) {
     if (filter && !filter(file.type)) continue
     if (skipProjectLevel && (file.type === 'Project' || file.type === 'Local'))
       continue
     if (file.content) {
+      // Enforce per-file character limit to prevent any single file from
+      // consuming excessive context.
+      let content = file.content.trim()
+      if (content.length > MAX_CLAUDE_MD_CHARS_PER_FILE) {
+        content = content.slice(0, MAX_CLAUDE_MD_CHARS_PER_FILE) + '\n\n... [truncated: file exceeded per-file limit]'
+      }
+
+      // Enforce aggregate character limit — stop injecting files once
+      // the combined CLAUDE.md content exceeds the total budget.
       const description =
         file.type === 'Project'
           ? ' (project instructions, checked into the codebase)'
@@ -1176,13 +1199,21 @@ export const getClaudeMds = (
                 ? " (user's auto-memory, persists across conversations)"
                 : " (user's private global instructions for all projects)"
 
-      const content = file.content.trim()
+      const entryHeader = `Contents of ${file.path}${description}:\n\n`
+      if (totalChars + entryHeader.length + content.length > MAX_CLAUDE_MD_TOTAL_CHARS) {
+        // Append a truncation notice and stop processing further files.
+        memories.push(`\n[Additional memory files were omitted to stay within the ${MAX_CLAUDE_MD_TOTAL_CHARS.toLocaleString()}-character context budget.]`)
+        break
+      }
+
+      totalChars += entryHeader.length + content.length
+
       if (feature('TEAMMEM') && file.type === 'TeamMem') {
         memories.push(
-          `Contents of ${file.path}${description}:\n\n<team-memory-content source="shared">\n${content}\n</team-memory-content>`,
+          `${entryHeader}<team-memory-content source="shared">\n${content}\n</team-memory-content>`,
         )
       } else {
-        memories.push(`Contents of ${file.path}${description}:\n\n${content}`)
+        memories.push(`${entryHeader}${content}`)
       }
     }
   }

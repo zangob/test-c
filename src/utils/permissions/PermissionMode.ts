@@ -77,14 +77,14 @@ const PERMISSION_MODE_CONFIG: Partial<
     color: 'error',
     external: 'dontAsk',
   },
-  ...(feature('TRANSCRIPT_CLASSIFIER')
+  ...(feature('TRANSCRIPT_CLASSIFIER') || process.env.USER_TYPE !== 'ant'
     ? {
         auto: {
           title: 'Auto mode',
           shortTitle: 'Auto',
           symbol: '⏵⏵',
           color: 'warning' as ModeColorKey,
-          external: 'default' as ExternalPermissionMode,
+          external: 'auto' as ExternalPermissionMode,
         },
       }
     : {}),
@@ -92,16 +92,12 @@ const PERMISSION_MODE_CONFIG: Partial<
 
 /**
  * Type guard to check if a PermissionMode is an ExternalPermissionMode.
- * auto is ant-only and excluded from external modes.
+ * Now includes 'auto' mode for all users.
  */
 export function isExternalPermissionMode(
   mode: PermissionMode,
 ): mode is ExternalPermissionMode {
-  // External users can't have auto, so always true for them
-  if (process.env.USER_TYPE !== 'ant') {
-    return true
-  }
-  return mode !== 'auto' && mode !== 'bubble'
+  return true
 }
 
 function getModeConfig(mode: PermissionMode): PermissionModeConfig {

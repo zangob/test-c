@@ -37,16 +37,6 @@ export function getNextPermissionMode(
 ): PermissionMode {
   switch (toolPermissionContext.mode) {
     case 'default':
-      // Ants skip acceptEdits and plan — auto mode replaces them
-      if (process.env.USER_TYPE === 'ant') {
-        if (toolPermissionContext.isBypassPermissionsModeAvailable) {
-          return 'bypassPermissions'
-        }
-        if (canCycleToAuto(toolPermissionContext)) {
-          return 'auto'
-        }
-        return 'default'
-      }
       return 'acceptEdits'
 
     case 'acceptEdits':
@@ -71,9 +61,10 @@ export function getNextPermissionMode(
       // Not exposed in UI cycle yet, but return default if somehow reached
       return 'default'
 
+    case 'auto':
+      return 'default'
 
     default:
-      // Covers auto (when TRANSCRIPT_CLASSIFIER is enabled) and any future modes — always fall back to default
       return 'default'
   }
 }

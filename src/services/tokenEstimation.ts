@@ -208,6 +208,41 @@ export function roughTokenCountEstimation(
 }
 
 /**
+ * Detect whether a string looks like dense structured data (JSON, XML, etc.)
+ * that tokenizes at ~2 bytes/token instead of the default ~4 bytes/token.
+ * Dense formats have many single-character tokens (brackets, quotes, commas).
+ */
+function isDenseContent(content: string): boolean {
+  if (content.length < 64) return false
+  const trimmed = content.trimStart()
+  const firstChar = trimmed[0]
+  if (firstChar === '{' || firstChar === '[' || firstChar === '<') return true
+  // Heuristic: high punctuation density suggests structured data
+  let punctuationCount = 0
+  const checkLen = Math.min(content.length, 512)
+  for (let i = 0; i < checkLen; i++) {
+    const c = content[i]
+    if (c === '{' || c === '}' || c === '[' || c === ']' || c === '"' || c === ',' || c === ':') {
+      punctuationCount++
+    }
+  }
+  return punctuationCount > checkLen * 0.15
+}
+
+/**
+ * Like {@link roughTokenCountEstimation} but auto-detects dense structured
+ * content and uses a more accurate bytes-per-token ratio. JSON-heavy tool
+ * results (API responses, structured data) tokenize at ~2 bytes/token,
+ * so the default ratio of 4 underestimates by ~2x.
+ */
+export function roughTokenCountEstimationAuto(content: string): number {
+  if (isDenseContent(content)) {
+    return roughTokenCountEstimation(content, 2)
+  }
+  return roughTokenCountEstimation(content, 4)
+}
+
+/**
  * Returns an estimated bytes-per-token ratio for a given file extension.
  * Dense JSON has many single-character tokens (`{`, `}`, `:`, `,`, `"`)
  * which makes the real ratio closer to 2 rather than the default 4.
@@ -379,7 +414,7 @@ function roughTokenCountEstimationForContent(
     return 0
   }
   if (typeof content === 'string') {
-    return roughTokenCountEstimation(content)
+    return roughTokenCountEstimationAuto(content)
   }
   let totalTokens = 0
   for (const block of content) {
@@ -392,10 +427,10 @@ function roughTokenCountEstimationForBlock(
   block: string | Anthropic.ContentBlock | Anthropic.ContentBlockParam,
 ): number {
   if (typeof block === 'string') {
-    return roughTokenCountEstimation(block)
+    return roughTokenCountEstimationAuto(block)
   }
   if (block.type === 'text') {
-    return roughTokenCountEstimation(block.text)
+    return roughTokenCountEstimationAuto(block.text)
   }
   if (block.type === 'image' || block.type === 'document') {
     // https://platform.claude.com/docs/en/build-with-claude/vision#calculate-image-costs
@@ -417,21 +452,22 @@ function roughTokenCountEstimationForBlock(
     // input is the JSON the model generated — arbitrarily large (bash
     // commands, Edit diffs, file contents).  Stringify once for the
     // char count; the API re-serializes anyway so this is what it sees.
-    return roughTokenCountEstimation(
+    // JSON is dense (~2 bytes/token) so use the auto-detecting estimator.
+    return roughTokenCountEstimationAuto(
       block.name + jsonStringify(block.input ?? {}),
     )
   }
   if (block.type === 'thinking') {
-    return roughTokenCountEstimation(block.thinking)
+    return roughTokenCountEstimationAuto(block.thinking)
   }
   if (block.type === 'redacted_thinking') {
-    return roughTokenCountEstimation(block.data)
+    return roughTokenCountEstimationAuto(block.data)
   }
   // server_tool_use, web_search_tool_result, mcp_tool_use, etc. —
   // text-like payloads (tool inputs, search results, no base64).
   // Stringify-length tracks the serialized form the API sees; the
   // key/bracket overhead is single-digit percent on real blocks.
-  return roughTokenCountEstimation(jsonStringify(block))
+  return roughTokenCountEstimationAuto(jsonStringify(block))
 }
 
 async function countTokensWithBedrock({

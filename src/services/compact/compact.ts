@@ -119,15 +119,20 @@ import {
   getPartialCompactPrompt,
 } from './prompt.js'
 
-export const POST_COMPACT_MAX_FILES_TO_RESTORE = 5
-export const POST_COMPACT_TOKEN_BUDGET = 50_000
+// Post-compaction file restoration budget.
+// Previously 5 files / 50K tokens — too aggressive; re-injecting 50K+ tokens
+// immediately after compaction could push the context back near the autocompact
+// threshold in a single turn. Reduced to 3 files / 25K tokens. Files not restored
+// here will be re-read on demand via the file-read tool when the model needs them.
+export const POST_COMPACT_MAX_FILES_TO_RESTORE = 3
+export const POST_COMPACT_TOKEN_BUDGET = 25_000
 export const POST_COMPACT_MAX_TOKENS_PER_FILE = 5_000
-// Skills can be large (verify=18.7KB, claude-api=20.1KB). Previously re-injected
-// unbounded on every compact → 5-10K tok/compact. Per-skill truncation beats
-// dropping — instructions at the top of a skill file are usually the critical
-// part. Budget sized to hold ~5 skills at the per-skill cap.
+// Skills can be large (verify=18.7KB, claude-api=20.1KB). Per-skill truncation
+// beats dropping — instructions at the top of a skill file are usually the
+// critical part. Reduced from 25K (5 skills) to 15K (3 skills) to keep
+// post-compact context lean. Skills not re-injected here are loaded on demand.
 export const POST_COMPACT_MAX_TOKENS_PER_SKILL = 5_000
-export const POST_COMPACT_SKILLS_TOKEN_BUDGET = 25_000
+export const POST_COMPACT_SKILLS_TOKEN_BUDGET = 15_000
 const MAX_COMPACT_STREAMING_RETRIES = 2
 
 /**
@@ -249,8 +254,8 @@ export function truncateHeadForPTLRetry(
   // (drops only the marker, re-adds it, zero progress on retry 2+).
   const input =
     messages[0]?.type === 'user' &&
-    messages[0].isMeta &&
-    messages[0].message.content === PTL_RETRY_MARKER
+      messages[0].isMeta &&
+      messages[0].message.content === PTL_RETRY_MARKER
       ? messages.slice(1)
       : messages
 
@@ -447,7 +452,7 @@ export async function compactConversation(
     let summaryResponse: AssistantMessage
     let summary: string | null
     let ptlAttempts = 0
-    for (;;) {
+    for (; ;) {
       summaryResponse = await streamCompactSummary({
         messages: messagesToSummarize,
         summaryRequest,
@@ -674,9 +679,9 @@ export async function compactConversation(
         compactionUsage?.cache_creation_input_tokens ?? 0,
       compactionTotalTokens: compactionUsage
         ? compactionUsage.input_tokens +
-          (compactionUsage.cache_creation_input_tokens ?? 0) +
-          (compactionUsage.cache_read_input_tokens ?? 0) +
-          compactionUsage.output_tokens
+        (compactionUsage.cache_creation_input_tokens ?? 0) +
+        (compactionUsage.cache_read_input_tokens ?? 0) +
+        compactionUsage.output_tokens
         : 0,
       promptCacheSharingEnabled,
       // analyzeContext walks every content block (~11ms on a 4.5K-message
@@ -790,13 +795,13 @@ export async function partialCompactConversation(
     const messagesToKeep =
       direction === 'up_to'
         ? allMessages
-            .slice(pivotIndex)
-            .filter(
-              m =>
-                m.type !== 'progress' &&
-                !isCompactBoundaryMessage(m) &&
-                !(m.type === 'user' && m.isCompactSummary),
-            )
+          .slice(pivotIndex)
+          .filter(
+            m =>
+              m.type !== 'progress' &&
+              !isCompactBoundaryMessage(m) &&
+              !(m.type === 'user' && m.isCompactSummary),
+          )
         : allMessages.slice(0, pivotIndex).filter(m => m.type !== 'progress')
 
     if (messagesToSummarize.length === 0) {
@@ -859,7 +864,7 @@ export async function partialCompactConversation(
     let summaryResponse: AssistantMessage
     let summary: string | null
     let ptlAttempts = 0
-    for (;;) {
+    for (; ;) {
       summaryResponse = await streamCompactSummary({
         messages: apiMessages,
         summaryRequest,
@@ -1009,7 +1014,7 @@ export async function partialCompactConversation(
     const lastPreCompactUuid =
       direction === 'up_to'
         ? allMessages.slice(0, pivotIndex).findLast(m => m.type !== 'progress')
-            ?.uuid
+          ?.uuid
         : messagesToKeep.at(-1)?.uuid
     const boundaryMarker = createCompactBoundaryMessage(
       'manual',
@@ -1034,12 +1039,12 @@ export async function partialCompactConversation(
         isCompactSummary: true,
         ...(messagesToKeep.length > 0
           ? {
-              summarizeMetadata: {
-                messagesSummarized: messagesToSummarize.length,
-                userContext: userFeedback,
-                direction,
-              },
-            }
+            summarizeMetadata: {
+              messagesSummarized: messagesToSummarize.length,
+              userContext: userFeedback,
+              direction,
+            },
+          }
           : { isVisibleInTranscriptOnly: true as const }),
       }),
     ]
@@ -1166,13 +1171,13 @@ async function streamCompactSummary({
   // and the server doesn't consider the session stale.
   const activityInterval = isSessionActivityTrackingActive()
     ? setInterval(
-        (statusSetter?: (status: 'compacting' | null) => void) => {
-          sendSessionActivitySignal()
-          statusSetter?.('compacting')
-        },
-        30_000,
-        context.setSDKStatus,
-      )
+      (statusSetter?: (status: 'compacting' | null) => void) => {
+        sendSessionActivitySignal()
+        statusSetter?.('compacting')
+      },
+      30_000,
+      context.setSDKStatus,
+    )
     : undefined
 
   try {
@@ -1220,9 +1225,9 @@ async function streamCompactSummary({
               cacheHitRate:
                 result.totalUsage.cache_read_input_tokens > 0
                   ? result.totalUsage.cache_read_input_tokens /
-                    (result.totalUsage.cache_read_input_tokens +
-                      result.totalUsage.cache_creation_input_tokens +
-                      result.totalUsage.input_tokens)
+                  (result.totalUsage.cache_read_input_tokens +
+                    result.totalUsage.cache_creation_input_tokens +
+                    result.totalUsage.input_tokens)
                   : 0,
             })
           }
@@ -1280,13 +1285,13 @@ async function streamCompactSummary({
       // Deduplicate by name to avoid API errors when MCP tools share names with built-in tools.
       const tools: Tool[] = useToolSearch
         ? uniqBy(
-            [
-              FileReadTool,
-              ToolSearchTool,
-              ...context.options.tools.filter(t => t.isMcp),
-            ],
-            'name',
-          )
+          [
+            FileReadTool,
+            ToolSearchTool,
+            ...context.options.tools.filter(t => t.isMcp),
+          ],
+          'name',
+        )
         : [FileReadTool]
 
       const streamingGen = queryModelWithStreaming({

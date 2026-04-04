@@ -39,7 +39,10 @@
       "Bash(npx tsc:*)",
       "Bash(node:*)",
       "Bash(git checkout:*)",
-      "Bash(ls -la *.md)"
+      "Bash(ls -la *.md)",
+      "Bash(find . -name *.test.* -o -name *.spec.*)",
+      "Bash(grep -r \"createServer\\\\|listen\\(\" src/ --include=*.ts --include=*.tsx)",
+      "Bash(gh pr:*)"
     ]
   }
 }
