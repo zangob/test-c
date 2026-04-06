@@ -9,22 +9,17 @@
  *
  * Individual tools may declare a lower maxResultSizeChars, but this constant
  * acts as a system-wide cap regardless of what tools declare.
- *
- * Previously 50,000 — reduced to 30,000 to prevent large tool results from
- * consuming excessive context. The disk-persistence mechanism ensures the
- * full content is still accessible on demand.
  */
-export const DEFAULT_MAX_RESULT_SIZE_CHARS = 30_000
+export const DEFAULT_MAX_RESULT_SIZE_CHARS = 50_000
 
 /**
  * Maximum size for tool results in tokens.
  * Based on analysis of tool result sizes, we set this to a reasonable upper bound
  * to prevent excessively large tool results from consuming too much context.
  *
- * This is approximately 240KB of text (assuming ~4 bytes per token).
- * Previously 100,000 — reduced to 60,000 to align with the lower char limit.
+ * This is approximately 400KB of text (assuming ~4 bytes per token).
  */
-export const MAX_TOOL_RESULT_TOKENS = 60_000
+export const MAX_TOOL_RESULT_TOKENS = 100_000
 
 /**
  * Bytes per token estimate for calculating token count from byte size.
@@ -48,13 +43,10 @@ export const MAX_TOOL_RESULT_BYTES = MAX_TOOL_RESULT_TOKENS * BYTES_PER_TOKEN
  * This prevents N parallel tools from each hitting the per-tool max and
  * collectively producing e.g. 10 × 40K = 400K in one turn's user message.
  *
- * Previously 200,000 — reduced to 120,000 to prevent parallel tool calls
- * from collectively overwhelming the context in a single turn.
- *
  * Overridable at runtime via GrowthBook flag tengu_hawthorn_window — see
  * getPerMessageBudgetLimit() in toolResultStorage.ts.
  */
-export const MAX_TOOL_RESULTS_PER_MESSAGE_CHARS = 120_000
+export const MAX_TOOL_RESULTS_PER_MESSAGE_CHARS = 200_000
 
 /**
  * Maximum character length for tool summary strings in compact views.

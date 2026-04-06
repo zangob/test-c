@@ -119,20 +119,15 @@ import {
   getPartialCompactPrompt,
 } from './prompt.js'
 
-// Post-compaction file restoration budget.
-// Previously 5 files / 50K tokens — too aggressive; re-injecting 50K+ tokens
-// immediately after compaction could push the context back near the autocompact
-// threshold in a single turn. Reduced to 3 files / 25K tokens. Files not restored
-// here will be re-read on demand via the file-read tool when the model needs them.
-export const POST_COMPACT_MAX_FILES_TO_RESTORE = 3
-export const POST_COMPACT_TOKEN_BUDGET = 25_000
+export const POST_COMPACT_MAX_FILES_TO_RESTORE = 5
+export const POST_COMPACT_TOKEN_BUDGET = 50_000
 export const POST_COMPACT_MAX_TOKENS_PER_FILE = 5_000
-// Skills can be large (verify=18.7KB, claude-api=20.1KB). Per-skill truncation
-// beats dropping — instructions at the top of a skill file are usually the
-// critical part. Reduced from 25K (5 skills) to 15K (3 skills) to keep
-// post-compact context lean. Skills not re-injected here are loaded on demand.
+// Skills can be large (verify=18.7KB, claude-api=20.1KB). Previously re-injected
+// unbounded on every compact → 5-10K tok/compact. Per-skill truncation beats
+// dropping — instructions at the top of a skill file are usually the critical
+// part. Budget sized to hold ~5 skills at the per-skill cap.
 export const POST_COMPACT_MAX_TOKENS_PER_SKILL = 5_000
-export const POST_COMPACT_SKILLS_TOKEN_BUDGET = 15_000
+export const POST_COMPACT_SKILLS_TOKEN_BUDGET = 25_000
 const MAX_COMPACT_STREAMING_RETRIES = 2
 
 /**

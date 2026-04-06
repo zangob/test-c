@@ -4,26 +4,48 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.88.5] - 2026-04-06
+
+### Added
+
+- **OpenRouter Provider Integration**: Added OpenRouter as a first-class provider, enabling access to hundreds of models through the Anthropic-compatible Messages API at `https://openrouter.ai/api`
+- **New Default Model**: When `CLAUDE_CODE_USE_OPENROUTER=1` is set, the default model is `qwen/qwen3.6-plus:free` (Qwen 3.6 Plus)
+- **Free Models Available**: Three free-tier models are available when using OpenRouter:
+  - `qwen/qwen3.6-plus:free` (Qwen 3.6 Plus Free) — alias: `or_free`, `or_qwen`
+  - `z-ai/glm-4.5-air:free` (GLM 4.5 Air Free) — alias: `or_glm45air`
+  - `minimax/minimax-m2.5:free` (MiniMax M2.5 Free) — alias: `or_minimax`
+- **Model Aliases**: Quick aliases `or_free`, `or_qwen`, `or_glm45air`, and `or_minimax` for easy model selection via `/model`
+- **Environment Variable Support**: New safe environment variables `CLAUDE_CODE_USE_OPENROUTER` and `OPENROUTER_API_KEY` added to `SAFE_ENV_VARS` allowlist
+- **Provider-Managed Env Vars**: `CLAUDE_CODE_USE_OPENROUTER` added to `PROVIDER_MANAGED_ENV_VARS` to prevent host routing override
+
+### Changed
+
+- **Provider Routing**: OpenRouter check now precedes Z.ai check in `getAPIProvider()` to ensure correct precedence when multiple provider flags are set
+- **API Client**: New OpenRouter branch in `getAnthropicClient()` constructs an Anthropic-compatible client pointing at `https://openrouter.ai/api` with generous API key fallback chain (`OPENROUTER_API_KEY` → `ANTHROPIC_AUTH_TOKEN` → `ANTHROPIC_API_KEY`)
+- **Auth Disabled on OpenRouter**: Adding `CLAUDE_CODE_USE_OPENROUTER` to the 3P service detection in `isAnthropicAuthEnabled()` so OAuth is automatically disabled when OpenRouter is configured
+- **Model Picker UI**: When OpenRouter is the active provider, only free-tier models are shown in the model selection menu
+- **Model Resolution**: `getDefaultMainLoopModelSetting()` now returns `qwen/qwen3.6-plus:free` as the default when OpenRouter is the active provider
+
+---
+
 ## [2.1.88.4] - 2026-04-04
 
 ### Added
 
 #### New Commands Available to All Users
 
-- **`/version`** — Display the current version and build timestamp. Previously restricted to Anthropic employees only.
+- `**/version**` — Display the current version and build timestamp. Previously restricted to Anthropic employees only.
   - **Usage:** Type `/version` in the command prompt
   - **Output:** `2.1.88.4 (built 2026-04-04T...)`
   - **When to use:** Verify you are running the correct build or when reporting issues
-
-- **`/commit`** — Create a safe git commit with an intelligent auto-generated message.
+- `**/commit`** — Create a safe git commit with an intelligent auto-generated message.
   - **Usage:** `/commit` or `/commit with additional instructions`
   - **How it works:**
     1. Analyzes changes via `git status`, `git diff`, and `git log`
     2. Crafts an appropriate commit message following repo conventions
     3. Executes `git add` and `git commit` safely
   - **When to use:** Quick commits without manually writing messages
-
-- **`/commit-push-pr`** — Complete Git + GitHub workflow in a single command.
+- `**/commit-push-pr`** — Complete Git + GitHub workflow in a single command.
   - **Usage:** `/commit-push-pr` or `/commit-push-pr with additional instructions`
   - **How it works:**
     1. Creates a new branch (prefixed with your username if on a main branch)
@@ -33,8 +55,7 @@ All notable changes to this project will be documented in this file.
     5. Returns the PR URL when done
   - **Undercover Mode:** Automatically activates in public repositories to prevent leaking internal information
   - **When to use:** Automate the full workflow from commit to PR in one step
-
-- **`/init-verifiers`** — Set up automated code quality verifiers.
+- `**/init-verifiers`** — Set up automated code quality verifiers.
   - **Usage:** `/init-verifiers`
   - **How it works:**
     1. Scans the project and detects its type (web app, CLI, API)
@@ -56,7 +77,6 @@ All notable changes to this project will be documented in this file.
     4. Leverages conversation context and CLAUDE.md files for intelligent decisions
   - **Mode cycling:** `Default → Accept Edits → Plan → Bypass Permissions → Auto → Default`
   - **When to use:** For a seamless experience without constant permission prompts, especially in trusted projects
-
 - **Plan Mode Interview Phase** — Adds a clarifying questions phase to the 5-phase plan mode workflow.
   - **How to enable:** `/plan` or switch to Plan mode from the status bar
   - **How it works:** Adds an "interview phase" as stage 2 in the workflow:
@@ -66,13 +86,11 @@ All notable changes to this project will be documented in this file.
     4. Write a detailed plan
     5. Execute after approval
   - **When to use:** For more precise planning with an opportunity to ask clarifying questions before starting
-
 - **Persistent effort=max** — Allow saving the maximum effort level permanently in settings.
   - **Usage:** `/effort max` then choose to save permanently
   - **How it works:** Previously `max` was session-scoped only. Now it can be persisted to `settings.json` to remain active across sessions
   - **Effort levels:** `low` (fast) → `medium` (balanced) → `high` (detailed) → `max` (maximum quality)
   - **When to use `max`:** For complex tasks requiring deep analysis and thorough reasoning
-
 - **Undercover Mode for Everyone** — Protection against leaking internal information when contributing to public repositories.
   - **Automatic activation:** Enabled automatically in public repositories (detected from remote URL)
   - **Manual activation:** `export CLAUDE_CODE_UNDERCOVER=1`
@@ -84,12 +102,13 @@ All notable changes to this project will be documented in this file.
     5. Writes commit messages as a human developer would
   - **Automatic activation rules:**
 
-    | Scenario | Undercover |
-    |----------|-----------|
-    | Public repo (GitHub public) | Enabled |
-    | Anthropic internal repo | Disabled |
-    | Regular folder without git | Enabled (safe default) |
-    | `/tmp` or temporary folder | Enabled |
+    | Scenario                    | Undercover             |
+    | --------------------------- | ---------------------- |
+    | Public repo (GitHub public) | Enabled                |
+    | Anthropic internal repo     | Disabled               |
+    | Regular folder without git  | Enabled (safe default) |
+    | `/tmp` or temporary folder  | Enabled                |
+
 
 ### Fixed
 
@@ -106,11 +125,13 @@ All notable changes to this project will be documented in this file.
 ## [2.1.88.3] - 2026-04-03
 
 ### Added
+
 - **Z.ai Provider Integration**: Added Z.ai as a main AI provider with full model support, authentication, and configuration
 - **Additional Model Support**: Expanded model configurations and options across multiple providers
 - **Enhanced README**: Added comprehensive list of supported models and providers
 
 ### Changed
+
 - Updated version from 2.1.88.1 to 2.1.88.3
 - Updated API client to support Z.ai provider endpoints
 - Enhanced model aliases and provider routing logic
@@ -120,6 +141,7 @@ All notable changes to this project will be documented in this file.
 ## [2.1.88.1] - 2026-04-02
 
 ### Added
+
 - **Initial Official Release**: Full open-source release of Claude Code CLI with complete feature set including:
   - Interactive terminal interface with React/Ink-based rendering
   - Multi-provider AI support (Anthropic, AWS Bedrock, Google Vertex, Azure, and more)
@@ -142,6 +164,7 @@ All notable changes to this project will be documented in this file.
   - Update system with automatic update checking
 
 ### Changed
+
 - Restructured project layout and removed outdated documentation
 - Added mock implementations for native modules (color-diff-napi, modifiers-napi)
 
@@ -149,8 +172,10 @@ All notable changes to this project will be documented in this file.
 
 ## Version History Summary
 
-| Version | Date | Key Changes |
-|---------|------|-------------|
+
+| Version  | Date       | Key Changes                                                    |
+| -------- | ---------- | -------------------------------------------------------------- |
+| 2.1.88.5 | 2026-04-06 | OpenRouter provider integration, free models, model aliases      |
 | 2.1.88.4 | 2026-04-04 | 8 new features unlocked for all users + 6 context window fixes |
-| 2.1.88.3 | 2026-04-03 | Z.ai provider, expanded model support |
-| 2.1.88.1 | 2026-04-02 | Initial official release |
+| 2.1.88.3 | 2026-04-03 | Z.ai provider, expanded model support                          |
+| 2.1.88.1 | 2026-04-02 | Initial official release                                       |

@@ -59,21 +59,15 @@ export type AutoCompactTrackingState = {
   consecutiveFailures?: number
 }
 
-// Safety buffer subtracted from the effective context window to determine
-// when autocompact should fire. A larger buffer prevents the context from
-// reaching the hard limit in a single turn (large tool results can exceed 13K).
-// Previously 13_000 — too tight for typical tool output sizes (50K+ chars).
-export const AUTOCOMPACT_BUFFER_TOKENS = 30_000
+export const AUTOCOMPACT_BUFFER_TOKENS = 13_000
 export const WARNING_THRESHOLD_BUFFER_TOKENS = 20_000
 export const ERROR_THRESHOLD_BUFFER_TOKENS = 20_000
 export const MANUAL_COMPACT_BUFFER_TOKENS = 3_000
 
 // Stop trying autocompact after this many consecutive failures.
-// Previously 3 — too aggressive; a single transient API error (e.g. prompt-too-long
-// during the compact call itself) would count as 1/3, and 3 transient failures in a
-// row permanently disabled autocompact for the session. Raised to 10 to tolerate
-// temporary instability while still acting as a meaningful circuit breaker.
-const MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 10
+// BQ 2026-03-10: 1,279 sessions had 50+ consecutive failures (up to 3,272)
+// in a single session, wasting ~250K API calls/day globally.
+const MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3
 
 export function getAutoCompactThreshold(model: string): number {
   const effectiveContextWindow = getEffectiveContextWindowSize(model)

@@ -176,6 +176,11 @@ export function getRuntimeMainLoopModel(params: {
  * @returns The default model setting to use
  */
 export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
+  // OpenRouter provider defaults to first free model
+  if (getAPIProvider() === 'openrouter') {
+    return getModelStrings().qwen36PlusFree
+  }
+
   // Z.ai provider defaults to GLM-5
   if (getAPIProvider() === 'zai') {
     return getModelStrings().zAiGlm5
@@ -388,12 +393,12 @@ export function getPublicModelDisplayName(model: ModelName): string | null {
     case getModelStrings().openaiGpt53Codex:
       return 'GPT 5.3 Codex'
     case getModelStrings().openaiGpt54:
-        return 'GPT 5.4'
-      case getModelStrings().openaiGpt51:
-        return 'GPT 5.1'
-      case getModelStrings().openaiGptOss120b:
-        return 'GPT OSS 120B'
-      case getModelStrings().zAiGlm5:
+      return 'GPT 5.4'
+    case getModelStrings().openaiGpt51:
+      return 'GPT 5.1'
+    case getModelStrings().openaiGptOss120b:
+      return 'GPT OSS 120B'
+    case getModelStrings().zAiGlm5:
       return 'GLM 5'
     case getModelStrings().zAiGlm5Turbo:
       return 'GLM 5 Turbo'
@@ -405,6 +410,12 @@ export function getPublicModelDisplayName(model: ModelName): string | null {
       return 'GLM 4.5 Air'
     case getModelStrings().minimaxM25:
       return 'MiniMax M2.5'
+    case getModelStrings().qwen36PlusFree:
+      return 'Qwen 3.6 Plus (Free)'
+    case getModelStrings().zAiGlm45AirFree:
+      return 'GLM 4.5 Air (Free)'
+    case getModelStrings().minimaxM25Free:
+      return 'MiniMax M2.5 (Free)'
     default:
       return null
   }
@@ -514,6 +525,13 @@ export function parseUserSpecifiedModel(
         return getModelStrings().zAiGlm45Air
       case 'minimax':
         return getModelStrings().minimaxM25
+      case 'or_free':
+      case 'or_qwen':
+        return getModelStrings().qwen36PlusFree
+      case 'or_glm45air':
+        return getModelStrings().zAiGlm45AirFree
+      case 'or_minimax':
+        return getModelStrings().minimaxM25Free
       default:
     }
   }
@@ -688,8 +706,17 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
   if (canonical.includes('glm-4.5') || canonical.includes('glm45')) {
     return 'GLM 4.5'
   }
-  if (canonical.includes('minimax')) {
+  if (canonical.includes('minimax') && !canonical.includes(':free')) {
     return 'MiniMax M2.5'
+  }
+  if (canonical.includes('qwen3.6-plus') || canonical.includes('qwen36plus')) {
+    return 'Qwen 3.6 Plus (Free)'
+  }
+  if (canonical.includes('glm-4.5-air') && canonical.includes('free')) {
+    return 'GLM 4.5 Air (Free)'
+  }
+  if (canonical.includes('minimax') && canonical.includes(':free')) {
+    return 'MiniMax M2.5 (Free)'
   }
 
   return undefined

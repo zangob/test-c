@@ -80,6 +80,8 @@ setx ANTHROPIC_AUTH_TOKEN "sk-blaze-your-key-here"
 
 > **The project will now use the custom BlazeAI API endpoint for Open Claude Code.**
 
+> **Note:** For alternative free model access, see the OpenRouter setup below — it provides free models via a simple API key without requiring BlazeAI registration.
+
 ---
 
 ## Using Z.ai / GLM Models
@@ -151,6 +153,90 @@ After starting Open Claude Code with Z.ai configured:
 
 ---
 
+## Using OpenRouter
+
+Open Claude Code supports **OpenRouter** as a first-class provider, allowing you to use hundreds of models through their Anthropic-compatible API.
+
+### Setup Instructions
+
+#### Method 1: Environment Variables (Recommended)
+
+1. **Get your API Key** from [OpenRouter](https://openrouter.ai/settings/keys):
+   - Register or log in to your OpenRouter account
+   - Generate an API key and copy it
+
+2. **Configure environment variables:**
+
+   **Windows (Command Prompt):**
+   ```cmd
+   setx CLAUDE_CODE_USE_OPENROUTER "1"
+   setx OPENROUTER_API_KEY "sk-or-v1-your-key-here"
+   ```
+
+   Then **restart your terminal** for the environment variables to take effect.
+
+3. **Start the application:**
+   ```
+   open-claude
+   ```
+
+#### Method 2: Using settings.json
+
+Create or edit `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_USE_OPENROUTER": "1",
+    "OPENROUTER_API_KEY": "sk-or-v1-your-key-here"
+  }
+}
+```
+
+Or with a custom base URL:
+```json
+{
+  "env": {
+    "CLAUDE_CODE_USE_OPENROUTER": "1",
+    "OPENROUTER_API_KEY": "sk-or-v1-your-key-here",
+    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api"
+  }
+}
+```
+
+### Free Models Available
+
+When using OpenRouter, the following free models are available:
+- **Qwen 3.6 Plus (Free)** (default) — `qwen/qwen3.6-plus:free`
+- **GLM 4.5 Air (Free)** — `z-ai/glm-4.5-air:free`
+- **MiniMax M2.5 (Free)** — `minimax/minimax-m2.5:free`
+
+### Model Selection
+
+```bash
+# Full model IDs
+/model qwen/qwen3.6-plus:free    # Use Qwen 3.6 Plus (Free)
+/model z-ai/glm-4.5-air:free     # Use GLM 4.5 Air (Free)
+/model minimax/minimax-m2.5:free # Use MiniMax M2.5 (Free)
+/model anthropic/claude-sonnet-4-6  # Use Claude Sonnet 4.6 via OpenRouter
+/model openai/gpt5.3-codex          # Use GPT 5.3 Codex via OpenRouter
+
+# Quick aliases
+/model or_free      # Qwen 3.6 Plus (Free)
+/model or_qwen      # Same as or_free
+/model or_glm45air  # GLM 4.5 Air (Free)
+/model or_minimax   # MiniMax M2.5 (Free)
+```
+
+### Features & Behavior
+
+- **Automatic OAuth disablement**: When `CLAUDE_CODE_USE_OPENROUTER=1` is set, the Anthropic OAuth login is automatically skipped — no Anthropic account needed
+- **Default model**: `qwen/qwen3.6-plus:free` — the model picker shows only free-tier models when OpenRouter is active
+- **API routing**: All requests are routed through `https://openrouter.ai/api/`
+- **API key priority**: `OPENROUTER_API_KEY` takes precedence, falling back to `ANTHROPIC_AUTH_TOKEN`, then `ANTHROPIC_API_KEY`
+
+---
+
 ## Supported Models
 
 Open Claude Code supports the following AI models from various providers:
@@ -170,6 +256,11 @@ Open Claude Code supports the following AI models from various providers:
 | glm-4.7 | Z-AI / GLM | Previous generation model |
 | moonshotai/kimi-k2.5 | Moonshot AI | Most capable for complex coding |
 | minimaxai/minimax-m2.5 | MiniMax | Efficient language model |
+| qwen/qwen3.6-plus:free | OpenRouter | Free model for everyday tasks |
+| z-ai/glm-4.5-air:free | OpenRouter | Free language model |
+| minimax/minimax-m2.5:free | OpenRouter | Free language model |
+| anthropic/claude-sonnet-4-6 | OpenRouter | Via OpenRouter proxy |
+| anthropic/claude-opus-4-6 | OpenRouter | Via OpenRouter proxy |
 
 ### Model Selection
 

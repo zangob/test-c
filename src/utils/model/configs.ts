@@ -12,6 +12,7 @@ export const CLAUDE_3_7_SONNET_CONFIG = {
   vertex: 'claude-3-7-sonnet@20250219',
   foundry: 'claude-3-7-sonnet',
   zai: 'claude-3-7-sonnet-20250219',
+  openrouter: 'claude-3-7-sonnet-20250219',
 } as const satisfies ModelConfig
 
 export const CLAUDE_3_5_V2_SONNET_CONFIG = {
@@ -20,6 +21,7 @@ export const CLAUDE_3_5_V2_SONNET_CONFIG = {
   vertex: 'claude-3-5-sonnet-v2@20241022',
   foundry: 'claude-3-5-sonnet',
   zai: 'claude-3-5-sonnet-20241022',
+  openrouter: 'claude-3-5-sonnet-20241022',
 } as const satisfies ModelConfig
 
 export const CLAUDE_3_5_HAIKU_CONFIG = {
@@ -28,6 +30,7 @@ export const CLAUDE_3_5_HAIKU_CONFIG = {
   vertex: 'claude-3-5-haiku@20241022',
   foundry: 'claude-3-5-haiku',
   zai: 'claude-3-5-haiku-20241022',
+  openrouter: 'claude-3-5-haiku-20241022',
 } as const satisfies ModelConfig
 
 export const CLAUDE_HAIKU_4_5_CONFIG = {
@@ -36,6 +39,7 @@ export const CLAUDE_HAIKU_4_5_CONFIG = {
   vertex: 'claude-haiku-4-5@20251001',
   foundry: 'claude-haiku-4-5',
   zai: 'claude-haiku-4-5-20251001',
+  openrouter: 'claude-haiku-4-5-20251001',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_CONFIG = {
@@ -44,6 +48,7 @@ export const CLAUDE_SONNET_4_CONFIG = {
   vertex: 'claude-sonnet-4@20250514',
   foundry: 'claude-sonnet-4',
   zai: 'claude-sonnet-4-20250514',
+  openrouter: 'claude-sonnet-4-20250514',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_5_CONFIG = {
@@ -52,6 +57,7 @@ export const CLAUDE_SONNET_4_5_CONFIG = {
   vertex: 'claude-sonnet-4-5@20250929',
   foundry: 'claude-sonnet-4-5',
   zai: 'claude-sonnet-4-5-20250929',
+  openrouter: 'claude-sonnet-4-5-20250929',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_CONFIG = {
@@ -60,6 +66,7 @@ export const CLAUDE_OPUS_4_CONFIG = {
   vertex: 'claude-opus-4@20250514',
   foundry: 'claude-opus-4',
   zai: 'claude-opus-4-20250514',
+  openrouter: 'claude-opus-4-20250514',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_1_CONFIG = {
@@ -68,6 +75,7 @@ export const CLAUDE_OPUS_4_1_CONFIG = {
   vertex: 'claude-opus-4-1@20250805',
   foundry: 'claude-opus-4-1',
   zai: 'claude-opus-4-1-20250805',
+  openrouter: 'claude-opus-4-1-20250805',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_5_CONFIG = {
@@ -76,6 +84,7 @@ export const CLAUDE_OPUS_4_5_CONFIG = {
   vertex: 'claude-opus-4-5@20251101',
   foundry: 'claude-opus-4-5',
   zai: 'claude-opus-4-5-20251101',
+  openrouter: 'claude-opus-4-5-20251101',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_6_CONFIG = {
@@ -84,6 +93,7 @@ export const CLAUDE_OPUS_4_6_CONFIG = {
   vertex: 'claude-opus-4-6',
   foundry: 'claude-opus-4-6',
   zai: 'claude-opus-4-6',
+  openrouter: 'claude-opus-4-6',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_6_CONFIG = {
@@ -92,6 +102,7 @@ export const CLAUDE_SONNET_4_6_CONFIG = {
   vertex: 'claude-sonnet-4-6',
   foundry: 'claude-sonnet-4-6',
   zai: 'claude-sonnet-4-6',
+  openrouter: 'claude-sonnet-4-6',
 } as const satisfies ModelConfig
 
 export const KIMI_K2_5_CONFIG = {
@@ -100,6 +111,7 @@ export const KIMI_K2_5_CONFIG = {
   vertex: 'moonshotai/kimi-k2.5',
   foundry: 'moonshotai/kimi-k2.5',
   zai: 'moonshotai/kimi-k2.5',
+  openrouter: 'moonshotai/kimi-k2.5',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_3_CODEX_CONFIG = {
@@ -108,6 +120,7 @@ export const OPENAI_GPT_5_3_CODEX_CONFIG = {
   vertex: 'openai/gpt5.3-codex',
   foundry: 'openai/gpt5.3-codex',
   zai: 'openai/gpt5.3-codex',
+  openrouter: 'openai/gpt-5.3-codex',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_4_CONFIG = {
@@ -116,6 +129,7 @@ export const OPENAI_GPT_5_4_CONFIG = {
   vertex: 'openai/gpt-5.4',
   foundry: 'openai/gpt-5.4',
   zai: 'openai/gpt-5.4',
+  openrouter: 'openai/gpt-5.4',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_1_CONFIG = {
@@ -124,6 +138,7 @@ export const OPENAI_GPT_5_1_CONFIG = {
   vertex: 'openai/gpt-5.1',
   foundry: 'openai/gpt-5.1',
   zai: 'openai/gpt-5.1',
+  openrouter: 'openai/gpt-5.1',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_OSS_120B_CONFIG = {
@@ -132,6 +147,7 @@ export const OPENAI_GPT_OSS_120B_CONFIG = {
   vertex: 'openai/gpt-oss-120b',
   foundry: 'openai/gpt-oss-120b',
   zai: 'openai/gpt-oss-120b',
+  openrouter: 'openai/gpt-oss-120b',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM5_CONFIG = {
@@ -140,6 +156,7 @@ export const Z_AI_GLM5_CONFIG = {
   vertex: 'z-ai/glm5',
   foundry: 'z-ai/glm5',
   zai: 'glm-5',
+  openrouter: 'z-ai/glm-5',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_7_CONFIG = {
@@ -148,6 +165,7 @@ export const Z_AI_GLM4_7_CONFIG = {
   vertex: 'glm-4.7',
   foundry: 'glm-4.7',
   zai: 'glm-4.7',
+  openrouter: 'z-ai/glm-4.7',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM5_TURBO_CONFIG = {
@@ -156,6 +174,7 @@ export const Z_AI_GLM5_TURBO_CONFIG = {
   vertex: 'glm-5-turbo',
   foundry: 'glm-5-turbo',
   zai: 'glm-5-turbo',
+  openrouter: 'z-ai/glm-5-turbo',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_5_CONFIG = {
@@ -164,6 +183,7 @@ export const Z_AI_GLM4_5_CONFIG = {
   vertex: 'glm-4.5',
   foundry: 'glm-4.5',
   zai: 'glm-4.5',
+  openrouter: 'z-ai/glm-4.5',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_5_AIR_CONFIG = {
@@ -172,6 +192,7 @@ export const Z_AI_GLM4_5_AIR_CONFIG = {
   vertex: 'glm-4.5-Air',
   foundry: 'glm-4.5-Air',
   zai: 'glm-4.5-Air',
+  openrouter: 'z-ai/glm-4.5-air',
 } as const satisfies ModelConfig
 
 export const MINIMAX_M2_5_CONFIG = {
@@ -180,6 +201,35 @@ export const MINIMAX_M2_5_CONFIG = {
   vertex: 'minimaxai/minimax-m2.5',
   foundry: 'minimaxai/minimax-m2.5',
   zai: 'minimaxai/minimax-m2.5',
+  openrouter: 'minimax/minimax-m2.5',
+} as const satisfies ModelConfig
+
+// OpenRouter free models
+export const QWEN36_PLUS_FREE_CONFIG = {
+  firstParty: 'qwen/qwen3.6-plus:free',
+  bedrock: 'qwen/qwen3.6-plus:free',
+  vertex: 'qwen/qwen3.6-plus:free',
+  foundry: 'qwen/qwen3.6-plus:free',
+  zai: 'qwen/qwen3.6-plus:free',
+  openrouter: 'qwen/qwen3.6-plus:free',
+} as const satisfies ModelConfig
+
+export const Z_AI_GLM4_5_AIR_FREE_CONFIG = {
+  firstParty: 'z-ai/glm-4.5-air:free',
+  bedrock: 'z-ai/glm-4.5-air:free',
+  vertex: 'z-ai/glm-4.5-air:free',
+  foundry: 'z-ai/glm-4.5-air:free',
+  zai: 'z-ai/glm-4.5-air:free',
+  openrouter: 'z-ai/glm-4.5-air:free',
+} as const satisfies ModelConfig
+
+export const MINIMAX_M2_5_FREE_CONFIG = {
+  firstParty: 'minimax/minimax-m2.5:free',
+  bedrock: 'minimax/minimax-m2.5:free',
+  vertex: 'minimax/minimax-m2.5:free',
+  foundry: 'minimax/minimax-m2.5:free',
+  zai: 'minimax/minimax-m2.5:free',
+  openrouter: 'minimax/minimax-m2.5:free',
 } as const satisfies ModelConfig
 
 // @[MODEL LAUNCH]: Register the new config here.
@@ -195,6 +245,9 @@ export const ALL_MODEL_CONFIGS = {
   zAiGlm45: Z_AI_GLM4_5_CONFIG,
   zAiGlm45Air: Z_AI_GLM4_5_AIR_CONFIG,
   minimaxM25: MINIMAX_M2_5_CONFIG,
+  qwen36PlusFree: QWEN36_PLUS_FREE_CONFIG,
+  zAiGlm45AirFree: Z_AI_GLM4_5_AIR_FREE_CONFIG,
+  minimaxM25Free: MINIMAX_M2_5_FREE_CONFIG,
   haiku35: CLAUDE_3_5_HAIKU_CONFIG,
   haiku45: CLAUDE_HAIKU_4_5_CONFIG,
   sonnet35: CLAUDE_3_5_V2_SONNET_CONFIG,

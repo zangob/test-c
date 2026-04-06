@@ -17,6 +17,10 @@ export const MODEL_ALIASES = [
   'glm45',
   'glm45air',
   'minimax',
+  'or_free',
+  'or_qwen',
+  'or_glm45air',
+  'or_minimax',
 ] as const
 export type ModelAlias = (typeof MODEL_ALIASES)[number]
 

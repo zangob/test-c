@@ -307,6 +307,33 @@ function getMinimaxM25Option(): ModelOption {
     descriptionForModel: 'MiniMax M2.5 - Efficient language model',
   }
 }
+
+function getQwen36PlusFreeOption(): ModelOption {
+  return {
+    value: 'or_free',
+    label: 'Qwen 3.6 Plus (Free)',
+    description: 'Qwen · Free model for everyday tasks',
+    descriptionForModel: 'Qwen 3.6 Plus - Free model with great capabilities',
+  }
+}
+
+function getGlm45AirFreeOption(): ModelOption {
+  return {
+    value: 'or_glm45air',
+    label: 'GLM 4.5 Air (Free)',
+    description: 'Z-AI · Free language model',
+    descriptionForModel: 'GLM 4.5 Air - Free language model from Z-AI',
+  }
+}
+
+function getMinimaxM25FreeOption(): ModelOption {
+  return {
+    value: 'or_minimax',
+    label: 'MiniMax M2.5 (Free)',
+    description: 'MiniMax AI · Free language model',
+    descriptionForModel: 'MiniMax M2.5 - Free language model',
+  }
+}
 function getMaxOpusOption(fastMode = false): ModelOption {
   return {
     value: 'opus',
@@ -368,6 +395,20 @@ function getOpusPlanOption(): ModelOption {
 // @[MODEL LAUNCH]: Update the model picker lists below to include/reorder options for the new model.
 // Each user tier (ant, Max/Team Premium, Pro/Team Standard/Enterprise, PAYG 1P, PAYG 3P) has its own list.
 function getModelOptionsBase(fastMode = false): ModelOption[] {
+  // OpenRouter provider: show free models
+  if (getAPIProvider() === 'openrouter') {
+    return [
+      {
+        value: null,
+        label: 'Default (recommended)',
+        description: 'Use the default model (Qwen 3.6 Plus Free)',
+      },
+      getQwen36PlusFreeOption(),
+      getGlm45AirFreeOption(),
+      getMinimaxM25FreeOption(),
+    ]
+  }
+
   // Z.ai provider: only show GLM models
   if (getAPIProvider() === 'zai') {
     return [
@@ -456,10 +497,16 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
     payg1POptions.push(getKimiK25Option())
     payg1POptions.push(getGpt53CodexOption())
     payg1POptions.push(getGpt54Option())
-  payg1POptions.push(getGpt51Option())
-  payg1POptions.push(getGptOss120bOption())
-  payg1POptions.push(getGlm5Option())
-  payg1POptions.push(getMinimaxM25Option())
+    payg1POptions.push(getGpt51Option())
+    payg1POptions.push(getGptOss120bOption())
+    payg1POptions.push(getGlm5Option())
+    payg1POptions.push(getMinimaxM25Option())
+
+    // Free models available
+    payg1POptions.push(getQwen36PlusFreeOption())
+    payg1POptions.push(getGlm45AirFreeOption())
+    payg1POptions.push(getMinimaxM25FreeOption())
+
     return payg1POptions
   }
 
@@ -474,6 +521,11 @@ function getModelOptionsBase(fastMode = false): ModelOption[] {
   payg3pOptions.push(getGptOss120bOption())
   payg3pOptions.push(getGlm5Option())
   payg3pOptions.push(getMinimaxM25Option())
+
+  // Free models available
+  payg3pOptions.push(getQwen36PlusFreeOption())
+  payg3pOptions.push(getGlm45AirFreeOption())
+  payg3pOptions.push(getMinimaxM25FreeOption())
 
   const customSonnet = getCustomSonnetOption()
   if (customSonnet !== undefined) {
