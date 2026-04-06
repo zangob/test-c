@@ -12,14 +12,17 @@ import { env } from '../utils/env.js';
 import { isRunningOnHomespace } from '../utils/envUtils.js';
 import { PreflightStep } from '../utils/preflightChecks.js';
 import type { ThemeSetting } from '../utils/theme.js';
+import { updateSettingsForSource } from '../utils/settings/settings.js';
 import { ApproveApiKey } from './ApproveApiKey.js';
+import { ApiKeyInput } from './ApiKeyInput.js';
 import { ConsoleOAuthFlow } from './ConsoleOAuthFlow.js';
 import { Select } from './CustomSelect/select.js';
 import { WelcomeV2 } from './LogoV2/WelcomeV2.js';
 import { PressEnterToContinue } from './PressEnterToContinue.js';
+import { ProviderSelector, type ProviderOption } from './ProviderSelector.js';
 import { ThemePicker } from './ThemePicker.js';
 import { OrderedList } from './ui/OrderedList.js';
-type StepId = 'preflight' | 'theme' | 'oauth' | 'api-key' | 'security' | 'terminal-setup';
+type StepId = 'preflight' | 'theme' | 'provider' | 'api-key-input' | 'oauth' | 'api-key' | 'security' | 'terminal-setup';
 interface OnboardingStep {
   id: StepId;
   component: React.ReactNode;
@@ -34,6 +37,7 @@ export function Onboarding({
   const [skipOAuth, setSkipOAuth] = useState(false);
   const [oauthEnabled] = useState(() => isAnthropicAuthEnabled());
   const [theme, setTheme] = useTheme();
+  const [selectedProvider, setSelectedProvider] = useState<ProviderOption | null>(null);
   useEffect(() => {
     logEvent('tengu_began_setup', {
       oauthEnabled
@@ -55,6 +59,43 @@ export function Onboarding({
     setTheme(newTheme);
     goToNextStep();
   }
+  function handleProviderSelect(provider: ProviderOption) {
+    setSelectedProvider(provider);
+    if (provider === 'openrouter') {
+      updateSettingsForSource('userSettings', {
+        env: { CLAUDE_CODE_USE_OPENROUTER: '1' },
+      });
+      process.env.CLAUDE_CODE_USE_OPENROUTER = '1';
+      delete process.env.CLAUDE_CODE_USE_ZAI;
+      goToNextStep();
+    } else if (provider === 'zai') {
+      updateSettingsForSource('userSettings', {
+        env: { CLAUDE_CODE_USE_ZAI: '1' },
+      });
+      process.env.CLAUDE_CODE_USE_ZAI = '1';
+      delete process.env.CLAUDE_CODE_USE_OPENROUTER;
+      goToNextStep();
+    } else {
+      goToNextStep();
+    }
+  }
+  function handleProviderApiKeySubmit(apiKey: string) {
+    if (selectedProvider === 'openrouter') {
+      updateSettingsForSource('userSettings', {
+        env: { OPENROUTER_API_KEY: apiKey },
+      });
+      process.env.OPENROUTER_API_KEY = apiKey;
+    } else if (selectedProvider === 'zai') {
+      updateSettingsForSource('userSettings', {
+        env: { ZAI_API_KEY: apiKey },
+      });
+      process.env.ZAI_API_KEY = apiKey;
+    }
+    goToNextStep();
+  }
+  function handleProviderApiKeySkip() {
+    goToNextStep();
+  }
   const exitState = useExitOnCtrlCDWithKeybindings();
 
   // Define all onboarding steps
@@ -62,6 +103,19 @@ export function Onboarding({
       <ThemePicker onThemeSelect={handleThemeSelection} showIntroText={true} helpText="To change this later, run /theme" hideEscToCancel={true} skipExitHandling={true} // Skip exit handling as Onboarding already handles it
     />
     </Box>;
+  const providerStep = <ProviderSelector onProviderSelect={handleProviderSelect} />;
+  const openRouterApiKeyStep = <ApiKeyInput
+      providerLabel="OpenRouter"
+      envVarName="OPENROUTER_API_KEY"
+      onSubmit={handleProviderApiKeySubmit}
+      onSkip={handleProviderApiKeySkip}
+    />;
+  const zaiApiKeyStep = <ApiKeyInput
+      providerLabel="Z.ai"
+      envVarName="ZAI_API_KEY"
+      onSubmit={handleProviderApiKeySubmit}
+      onSkip={handleProviderApiKeySkip}
+    />;
   const securityStep = <Box flexDirection="column" gap={1} paddingLeft={1}>
       <Text bold>Security notes:</Text>
       <Box flexDirection="column" width={70}>
@@ -124,13 +178,29 @@ export function Onboarding({
     id: 'theme',
     component: themeStep
   });
+  steps.push({
+    id: 'provider',
+    component: providerStep
+  });
+  if (selectedProvider === 'openrouter') {
+    steps.push({
+      id: 'api-key-input',
+      component: openRouterApiKeyStep
+    });
+  }
+  if (selectedProvider === 'zai') {
+    steps.push({
+      id: 'api-key-input',
+      component: zaiApiKeyStep
+    });
+  }
   if (apiKeyNeedingApproval) {
     steps.push({
       id: 'api-key',
       component: <ApproveApiKey customApiKeyTruncated={apiKeyNeedingApproval} onDone={handleApiKeyDone} />
     });
   }
-  if (oauthEnabled) {
+  if (oauthEnabled && selectedProvider === 'anthropic') {
     steps.push({
       id: 'oauth',
       component: <SkippableStep skip={skipOAuth} onSkip={goToNextStep}>

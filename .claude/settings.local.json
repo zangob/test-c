@@ -47,7 +47,9 @@
       "Bash(grep -v \":0$\")",
       "Bash(grep -rn \"modelAllowlist\\\\|filterModelOptionsByAllowlist\\\\|isModelAllowed\" D:claude-code-mainsrc --include=*.ts --include=*.tsx)",
       "Bash(grep -rn \"modelPicker\\\\|ModelPicker\\\\|/model\" D:claude-code-mainsrccommandsmodel --include=*.ts --include=*.tsx)",
-      "Bash(grep -rn ZAI_API_KEY D:claude-code-mainsrc --include=*.ts --include=*.tsx)"
+      "Bash(grep -rn ZAI_API_KEY D:claude-code-mainsrc --include=*.ts --include=*.tsx)",
+      "Bash(grep -o \"\"content\"\":\"\".*logout C:UsersUSER.claudeprojectsD--claude-code-main9971cbca-b775-4ae9-b5da-46d541a48aa0.jsonl)",
+      "Bash(python:*)"
     ]
   }
 }
