@@ -49,7 +49,11 @@
       "Bash(grep -rn \"modelPicker\\\\|ModelPicker\\\\|/model\" D:claude-code-mainsrccommandsmodel --include=*.ts --include=*.tsx)",
       "Bash(grep -rn ZAI_API_KEY D:claude-code-mainsrc --include=*.ts --include=*.tsx)",
       "Bash(grep -o \"\"content\"\":\"\".*logout C:UsersUSER.claudeprojectsD--claude-code-main9971cbca-b775-4ae9-b5da-46d541a48aa0.jsonl)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(grep -ri update D:/claude-code-main/src/commands/ --include=*.ts -l)",
+      "Bash(ls D:/claude-code-main/update*)",
+      "Bash(ls D:/claude-code-main/*.bat)",
+      "Bash(ls D:/claude-code-main/*.sh)"
     ]
   }
 }

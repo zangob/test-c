@@ -45,12 +45,19 @@ export async function call(
     console.log(`New Update: ${latestCommit}`)
     console.log('Running update...')
 
-    // Run the update.bat script synchronously so user can see output
-    const updateScript = resolve(cwd, 'update.bat')
-    execSync(`cmd /c "${updateScript}"`, {
-      stdio: 'inherit',
-      cwd,
-    })
+    // Run the appropriate update script based on OS
+    const updateScript = resolve(cwd, process.platform === 'win32' ? 'update.bat' : 'update.sh')
+    if (process.platform === 'win32') {
+      execSync(`cmd /c "${updateScript}"`, {
+        stdio: 'inherit',
+        cwd,
+      })
+    } else {
+      execSync(`bash "${updateScript}"`, {
+        stdio: 'inherit',
+        cwd,
+      })
+    }
 
     return { type: 'text', value: '' }
   } catch (error) {
