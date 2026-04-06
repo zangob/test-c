@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.88.5] - 2026-04-06
+
+### Added
+
+- **Cross-Platform Update Scripts**: Added `update.sh` for Linux/macOS systems, enabling `/update` and `open-claude update` to work across all operating systems
+- **OS Detection in Update Command**: `update.ts` now detects `process.platform` to run the correct script (`update.bat` on Windows, `update.sh` on Linux/macOS)
+
+### Changed
+
+- Updated `/update` command description to reflect cross-platform support
+- Added `upgrade` alias support in the update command
+
 ---
 
 ## [2.1.88.5] - 2026-04-06

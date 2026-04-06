@@ -53,7 +53,9 @@
       "Bash(grep -ri update D:/claude-code-main/src/commands/ --include=*.ts -l)",
       "Bash(ls D:/claude-code-main/update*)",
       "Bash(ls D:/claude-code-main/*.bat)",
-      "Bash(ls D:/claude-code-main/*.sh)"
+      "Bash(ls D:/claude-code-main/*.sh)",
+      "Bash(ls D:/claude-code-main/CHANGELOG* D:/claude-code-main/changelog* D:/claude-code-main/Changelog*)",
+      "Bash(git log:*)"
     ]
   }
 }
