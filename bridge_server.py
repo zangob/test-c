@@ -1,15 +1,6 @@
 """
-CLI-to-Web Bridge Server
-FastAPI backend that automates browser interactions with AI chat interfaces.
-
-This server uses Playwright to control a real browser instance, allowing
-commands sent via API to be typed into web-based AI interfaces (ChatGPT,
-Gemini, Claude) and responses scraped back to the caller.
-
-Selectors Note: Web UI selectors change frequently. Update the SELECTORS
-dictionary below if the automation fails due to UI changes.
+CLI-to-Web Bridge Server - Fixed for Qwen
 """
-
 import asyncio
 import json
 import logging
@@ -20,479 +11,230 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeout
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# CONFIGURATION & SELECTORS
+# SELECTORS
 # =============================================================================
-# These selectors target common AI chat interfaces. Update them if the website
-# changes its DOM structure. Test selectors using browser DevTools.
-# =============================================================================
-
 SELECTORS = {
+    "chat.qwen.ai": {
+        "textarea": "textarea.message-input-textarea",
+        "send_button": "button.send-button", 
+        "stop_button": "button.stop-button",
+        "response_container": "div.response-message-content",
+        "response_text": "div.response-message-content",
+    },
     "chat.openai.com": {
         "textarea": "textarea[placeholder*='Message']",
         "send_button": "button[data-testid='send-button']",
+        "stop_button": "button[aria-label*='Stop']",
         "response_container": "article[data-testid='conversation-turn']",
         "response_text": "article[data-testid='conversation-turn']:last-child .prose",
-        "loading_indicator": "button[aria-label*='Stop']",
-    },
-    "gemini.google.com": {
-        "textarea": "div[contenteditable='true'][role='textbox']",
-        "send_button": "button[aria-label*='Send']",
-        "response_container": "re-chat-content",
-        "response_text": "re-chat-content:last-child .markdown-content",
-        "loading_indicator": "re-circular-progress",
-    },
-    "claude.ai": {
-        "textarea": "div[contenteditable='true'][data-placeholder*='Message']",
-        "send_button": "button[aria-label*='Send']",
-        "response_container": "article",
-        "response_text": "article:last-child .prose",
-        "loading_indicator": ".streaming-indicator",
-    },
+    }
 }
 
-# Default configuration
 DEFAULT_CONFIG = {
-    "url": "https://chat.openai.com/",
+    "url": "https://chat.qwen.ai/",
     "cookies_file": "cookies.json",
     "timeout_seconds": 120,
-    "response_wait_timeout": 60,
 }
 
-
 class MessageRequest(BaseModel):
-    """Request model for the /send endpoint."""
     message: str
-    platform: Optional[str] = None  # Optional: "chatgpt", "gemini", "claude"
-
+    platform: Optional[str] = None
 
 class MessageResponse(BaseModel):
-    """Response model for the /send endpoint."""
     response: str
     success: bool
     error: Optional[str] = None
-    platform: Optional[str] = None  # Returns which platform was used
-
+    platform: Optional[str] = None
 
 class BridgeServer:
-    """Manages browser instance and handles chat interactions."""
-
     def __init__(self, config: Dict[str, Any] = None):
         self.config = {**DEFAULT_CONFIG, **(config or {})}
         self.browser: Optional[Browser] = None
         self.page: Optional[Page] = None
         self.playwright = None
         self.current_url = self.config["url"]
-        self.current_platform = "chatgpt"  # Track current platform
-        self.selectors = self._get_selectors_for_url(self.current_url)
+        self.current_platform = "qwen"
+        self.selectors = SELECTORS.get("chat.qwen.ai", SELECTORS["chat.openai.com"])
 
     def _get_selectors_for_url(self, url: str) -> Dict[str, str]:
-        """Get appropriate selectors based on the target URL."""
-        if "chat.openai.com" in url or "openai.com" in url:
-            self.current_platform = "chatgpt"
-            return SELECTORS["chat.openai.com"]
-        elif "gemini" in url:
-            self.current_platform = "gemini"
-            return SELECTORS["gemini.google.com"]
-        elif "claude" in url:
-            self.current_platform = "claude"
-            return SELECTORS["claude.ai"]
-        else:
-            # Default to ChatGPT selectors as fallback
-            logger.warning(f"Unknown URL '{url}', using ChatGPT selectors as fallback")
-            self.current_platform = "chatgpt"
-            return SELECTORS["chat.openai.com"]
-
-    async def switch_platform(self, platform: str) -> str:
-        """
-        Switch to a different AI platform.
-        
-        Args:
-            platform: Platform name ("chatgpt", "gemini", "claude")
-            
-        Returns:
-            The URL of the new platform
-        """
-        platform_urls = {
-            "chatgpt": "https://chat.openai.com/",
-            "gemini": "https://gemini.google.com/",
-            "claude": "https://claude.ai/",
-        }
-        
-        if platform not in platform_urls:
-            raise ValueError(f"Unsupported platform: {platform}. Supported: {list(platform_urls.keys())}")
-        
-        url = platform_urls[platform]
-        await self.navigate_to(url)
-        logger.info(f"Switched to platform: {platform} ({url})")
-        return url
+        if "qwen" in url:
+            self.current_platform = "qwen"
+            return SELECTORS["chat.qwen.ai"]
+        self.current_platform = "chatgpt"
+        return SELECTORS["chat.openai.com"]
 
     async def start(self):
-        """Initialize Playwright and launch browser."""
-        try:
-            logger.info("Starting Playwright...")
-            self.playwright = await async_playwright().start()
+        logger.info("Starting Playwright...")
+        self.playwright = await async_playwright().start()
+        
+        storage_state = None
+        cookies_path = Path(self.config["cookies_file"])
+        if cookies_path.exists():
+            with open(cookies_path, "r") as f:
+                storage_state = json.load(f)
+            logger.info(f"Loaded cookies from {cookies_path}")
 
-            # Load cookies if available
-            storage_state = None
-            cookies_path = Path(self.config["cookies_file"])
-            if cookies_path.exists():
-                try:
-                    with open(cookies_path, "r") as f:
-                        storage_state = json.load(f)
-                    logger.info(f"Loaded cookies from {cookies_path}")
-                except json.JSONDecodeError as e:
-                    logger.error(f"Invalid JSON in cookies file: {e}")
-                except Exception as e:
-                    logger.error(f"Error reading cookies file: {e}")
+        logger.info("Launching Chromium browser (visible mode)...")
+        self.browser = await self.playwright.chromium.launch(
+            headless=False,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
 
-            # Launch browser in visible mode (headless=False for demo)
-            logger.info("Launching Chromium browser (visible mode)...")
-            self.browser = await self.playwright.chromium.launch(
-                headless=False,  # Visible for demo purposes
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--no-sandbox",
-                    "--disable-dev-shm-usage",
-                ]
-            )
+        context_kwargs = {"viewport": {"width": 1280, "height": 720}}
+        if storage_state:
+            context_kwargs["storage_state"] = storage_state
 
-            # Create context with storage state if available
-            context_kwargs = {
-                "viewport": {"width": 1280, "height": 720},
-                "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            }
-            if storage_state:
-                context_kwargs["storage_state"] = storage_state
+        context = await self.browser.new_context(**context_kwargs)
+        self.page = await context.new_page()
 
-            context = await self.browser.new_context(**context_kwargs)
-            self.page = await context.new_page()
-
-            # Navigate to target URL
-            logger.info(f"Navigating to {self.current_url}")
-            await self.page.goto(self.current_url, wait_until="domcontentloaded", timeout=60000)
-
-            # Wait for initial page load
-            await asyncio.sleep(3)  # Allow any login redirects or JS to initialize
-
-            logger.info("Browser initialized successfully")
-
-        except Exception as e:
-            logger.error(f"Failed to initialize browser: {e}")
-            await self.stop()
-            raise
+        logger.info(f"Navigating to {self.current_url}")
+        await self.page.goto(self.current_url, wait_until="domcontentloaded", timeout=60000)
+        await asyncio.sleep(3)
+        logger.info("Browser initialized successfully")
 
     async def stop(self):
-        """Clean up browser resources."""
-        try:
-            if self.browser:
-                await self.browser.close()
-                logger.info("Browser closed")
-            if self.playwright:
-                await self.playwright.stop()
-                logger.info("Playwright stopped")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
+        if self.browser:
+            await self.browser.close()
+        if self.playwright:
+            await self.playwright.stop()
 
+    # =========================================================================
+    # CORE METHOD: send_message (INDENTED INSIDE CLASS)
+    # =========================================================================
     async def send_message(self, message: str, platform: Optional[str] = None) -> str:
-        """
-        Send a message to the chat interface and wait for response.
-
-        Args:
-            message: The text message to send
-            platform: Optional platform override ("chatgpt", "gemini", "claude")
-
-        Returns:
-            The AI's response text
-
-        Raises:
-            TimeoutError: If response takes too long
-            Exception: If selectors fail or page is not ready
-        """
         if not self.page:
-            raise RuntimeError("Browser not initialized. Call start() first.")
+            raise RuntimeError("Browser not initialized.")
 
         try:
-            # Switch platform if requested
             if platform and platform != self.current_platform:
                 await self.switch_platform(platform)
 
             logger.info(f"Sending message to {self.current_platform}: {message[:50]}...")
-
-            # Refresh selectors in case URL changed
             self.selectors = self._get_selectors_for_url(self.current_url)
+            
+            # 1. Count existing responses
+            response_selector = self.selectors["response_text"]
+            try:
+                initial_count = await self.page.locator(response_selector).count()
+                logger.info(f"📊 Initial response count: {initial_count}")
+            except:
+                initial_count = 0
 
-            # Wait for textarea to be visible and enabled
+            # 2. Wait for Input
             textarea_selector = self.selectors["textarea"]
             await self.page.wait_for_selector(textarea_selector, state="visible", timeout=10000)
-            await self.page.wait_for_selector(textarea_selector, state="enabled", timeout=10000)
+            
+            # 3. Type and Send
+            await self.page.locator(textarea_selector).focus()
+            await asyncio.sleep(0.3)
+            await self.page.keyboard.press("Control+a")
+            await self.page.keyboard.press("Delete")
+            await self.page.keyboard.type(message, delay=30)
+            await self.page.keyboard.press("Enter")
 
-            # Clear textarea and fill with new message
-            await self.page.fill(textarea_selector, "")
-            await self.page.type(textarea_selector, message, delay=50)  # Simulate human typing
+            logger.info("✅ Message sent. Waiting for AI state changes...")
 
-            # Press Enter to send (more reliable than clicking send button)
-            await self.page.press(textarea_selector, "Enter")
-            logger.info("Message sent, waiting for response...")
-
-            # Wait for loading indicator to appear (shows AI is thinking)
+            # 4. WAIT FOR STOP BUTTON (AI Thinking)
+            stop_selector = self.selectors.get("stop_button", "button.stop-button")
             try:
-                loading_selector = self.selectors.get("loading_indicator")
-                if loading_selector:
-                    await self.page.wait_for_selector(loading_selector, state="visible", timeout=10000)
-                    logger.info("AI is typing...")
+                await self.page.wait_for_selector(stop_selector, state="attached", timeout=5000)
+                logger.info("⏳ Stop button detected (AI is thinking)")
             except PlaywrightTimeout:
-                # Loading indicator might not appear for very fast responses
-                logger.info("Loading indicator not detected, proceeding...")
+                logger.warning("⚠️ Stop button not found, checking for response directly...")
 
-            # Wait for loading indicator to disappear (AI finished typing)
+            # 5. WAIT FOR STOP BUTTON TO DISAPPEAR (AI Finished)
             try:
-                if loading_selector:
-                    await self.page.wait_for_selector(loading_selector, state="hidden", timeout=self.config["response_wait_timeout"] * 1000)
-                    logger.info("AI finished typing")
+                await self.page.wait_for_selector(stop_selector, state="detached", timeout=60000)
+                logger.info("✅ Stop button disappeared (AI finished)")
             except PlaywrightTimeout:
-                logger.warning("Timeout waiting for loading indicator to disappear")
+                logger.warning("⏰ Timeout waiting for stop button to disappear")
 
-            # Additional wait to ensure all content is rendered
-            await asyncio.sleep(2)
+            # 6. EXTRA WAIT FOR NEW MESSAGE COUNT
+            max_wait = 10
+            start_time = asyncio.get_event_loop().time()
+            while asyncio.get_event_loop().time() - start_time < max_wait:
+                await asyncio.sleep(0.5)
+                current_count = await self.page.locator(response_selector).count()
+                if current_count > initial_count:
+                    logger.info(f"🎉 New response detected! Count: {initial_count} -> {current_count}")
+                    break
+            
+            await asyncio.sleep(1) # Final render wait
 
-            # Scrape the latest response
+            # 7. Scrape
             response_text = await self._scrape_latest_response()
-
             if not response_text.strip():
-                logger.warning("Scraped empty response")
-                return "Error: Received empty response from AI"
-
-            logger.info(f"Received response ({len(response_text)} chars)")
+                return "Error: Empty response."
             return response_text
 
-        except PlaywrightTimeout as e:
-            logger.error(f"Timeout during message exchange: {e}")
-            raise TimeoutError(f"Operation timed out: {e}")
         except Exception as e:
-            logger.error(f"Error sending message: {e}")
+            logger.error(f"❌ Error: {e}")
             raise
 
     async def _scrape_latest_response(self) -> str:
-        """
-        Extract the latest AI response from the page.
-
-        Uses JavaScript to find and extract text from the most recent
-        response container in the chat interface.
-        """
         response_selector = self.selectors["response_text"]
-
-        # Use JavaScript to get the text content of the latest response
-        script = f"""
-        () => {{
-            const elements = document.querySelectorAll('{response_selector}');
+        script = """
+        () => {
+            const elements = document.querySelectorAll('%s');
             if (elements.length === 0) return '';
-            const latest = elements[elements.length - 1];
-            return latest.innerText || latest.textContent || '';
-        }}
-        """
-
+            const last = elements[elements.length - 1];
+            return last.innerText || last.textContent || '';
+        }
+        """ % response_selector
         try:
-            response = await self.page.evaluate(script)
-            return response.strip() if response else ""
+            text = await self.page.evaluate(script)
+            return text.strip()
         except Exception as e:
-            logger.error(f"Error scraping response: {e}")
+            logger.error(f"Scraping error: {e}")
             return ""
 
-    async def navigate_to(self, url: str):
-        """Navigate to a different URL and update selectors."""
-        if not self.page:
-            raise RuntimeError("Browser not initialized")
+    async def switch_platform(self, platform: str):
+        urls = {"qwen": "https://chat.qwen.ai/", "chatgpt": "https://chat.openai.com/"}
+        if platform not in urls: raise ValueError("Unsupported platform")
+        await self.page.goto(urls[platform], wait_until="domcontentloaded")
+        self.current_url = urls[platform]
+        self.selectors = self._get_selectors_for_url(self.current_url)
+        await asyncio.sleep(2)
 
-        logger.info(f"Navigating to {url}")
-        await self.page.goto(url, wait_until="domcontentloaded", timeout=60000)
-        self.current_url = url
-        self.selectors = self._get_selectors_for_url(url)
-        await asyncio.sleep(2)  # Allow page initialization
-
-
-# Create FastAPI app
-app = FastAPI(
-    title="CLI-to-Web Bridge",
-    description="Automate AI chat interfaces via browser automation",
-    version="1.0.0",
-)
-
-# Global server instance
+# =============================================================================
+# FASTAPI APP
+# =============================================================================
+app = FastAPI(title="CLI-to-Web Bridge")
 bridge_server: Optional[BridgeServer] = None
-
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize browser on server startup."""
     global bridge_server
-    try:
-        bridge_server = BridgeServer()
-        await bridge_server.start()
-        logger.info("Bridge server started successfully")
-    except Exception as e:
-        logger.error(f"Failed to start bridge server: {e}")
-        raise
-
+    bridge_server = BridgeServer()
+    await bridge_server.start()
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Clean up browser on server shutdown."""
     global bridge_server
     if bridge_server:
         await bridge_server.stop()
-        bridge_server = None
-
 
 @app.post("/send", response_model=MessageResponse)
-async def send_message(request: MessageRequest):
-    """
-    Send a message to the AI chat interface and return the response.
-
-    Expects JSON: {"message": "your question here", "platform": "chatgpt|gemini|claude"}
-    Returns JSON: {"response": "AI answer", "success": true/false, "error": null, "platform": "used"}
-    
-    Platform Selection:
-    - If platform is specified in request, switches to that platform first
-    - If no platform specified, uses the current platform (default: chatgpt)
-    - Supported platforms: chatgpt, gemini, claude
-    """
+async def send_message_endpoint(request: MessageRequest):
     global bridge_server
-
     if not bridge_server or not bridge_server.page:
-        raise HTTPException(status_code=503, detail="Browser not initialized")
-
-    if not request.message or not request.message.strip():
-        return MessageResponse(
-            response="",
-            success=False,
-            error="Empty message provided",
-            platform=bridge_server.current_platform
-        )
-
+        raise HTTPException(status_code=503, detail="Browser not ready")
     try:
-        # Use platform from request or default to current
-        platform = request.platform if request.platform else None
-        
-        response_text = await bridge_server.send_message(request.message, platform=platform)
-        return MessageResponse(
-            response=response_text,
-            success=True,
-            error=None,
-            platform=bridge_server.current_platform
-        )
-    except TimeoutError as e:
-        logger.error(f"Timeout error: {e}")
-        return MessageResponse(
-            response="",
-            success=False,
-            error=f"Timeout: {str(e)}",
-            platform=bridge_server.current_platform
-        )
+        text = await bridge_server.send_message(request.message, request.platform)
+        return MessageResponse(response=text, success=True, platform=bridge_server.current_platform)
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return MessageResponse(
-            response="",
-            success=False,
-            error=f"Server error: {str(e)}",
-            platform=bridge_server.current_platform
-        )
-
+        return MessageResponse(response="", success=False, error=str(e), platform=bridge_server.current_platform)
 
 @app.get("/health")
-async def health_check():
-    """Check if the server and browser are healthy."""
-    global bridge_server
-
-    if not bridge_server:
-        return {"status": "unhealthy", "message": "Server not initialized"}
-
-    if not bridge_server.page:
-        return {"status": "unhealthy", "message": "Browser page not available"}
-
-    try:
-        # Quick check if page is responsive
-        await bridge_server.page.evaluate("1")
-        return {
-            "status": "healthy", 
-            "url": bridge_server.current_url,
-            "platform": bridge_server.current_platform
-        }
-    except Exception as e:
-        return {"status": "unhealthy", "message": str(e)}
-
-
-@app.get("/platforms")
-async def list_platforms():
-    """List all supported platforms and current selection."""
-    global bridge_server
-    
-    return {
-        "supported_platforms": ["chatgpt", "gemini", "claude"],
-        "current_platform": bridge_server.current_platform if bridge_server else None,
-        "current_url": bridge_server.current_url if bridge_server else None,
-        "selectors_info": {
-            "chatgpt": "https://chat.openai.com/",
-            "gemini": "https://gemini.google.com/",
-            "claude": "https://claude.ai/"
-        }
-    }
-
-
-@app.post("/switch-platform")
-async def switch_platform(request: dict):
-    """Switch to a different AI platform."""
-    global bridge_server
-
-    if not bridge_server:
-        raise HTTPException(status_code=503, detail="Server not initialized")
-
-    platform = request.get("platform")
-    if not platform:
-        raise HTTPException(status_code=400, detail="Platform required (chatgpt, gemini, or claude)")
-
-    try:
-        url = await bridge_server.switch_platform(platform)
-        return {
-            "status": "success", 
-            "platform": platform,
-            "url": url
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/navigate")
-async def navigate(request: dict):
-    """Navigate to a different URL."""
-    global bridge_server
-
-    if not bridge_server:
-        raise HTTPException(status_code=503, detail="Server not initialized")
-
-    url = request.get("url")
-    if not url:
-        raise HTTPException(status_code=400, detail="URL required")
-
-    try:
-        await bridge_server.navigate_to(url)
-        return {"status": "success", "url": url}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+async def health():
+    if not bridge_server or not bridge_server.page:
+        return {"status": "unhealthy"}
+    return {"status": "healthy", "platform": bridge_server.current_platform}
 
 if __name__ == "__main__":
     import uvicorn
-
-    # Run with: python bridge_server.py
-    # Or use: uvicorn bridge_server:app --reload --host 0.0.0.0 --port 8000
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=8000)

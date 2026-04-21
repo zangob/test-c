@@ -313,13 +313,10 @@ Examples:
     args = parser.parse_args()
 
     # Update server URL if provided
-    global SERVER_URL, SEND_ENDPOINT, HEALTH_ENDPOINT, PLATFORMS_ENDPOINT, SWITCH_PLATFORM_ENDPOINT
-    if args.server_url != SERVER_URL:
-        SERVER_URL = args.server_url
-        SEND_ENDPOINT = f"{SERVER_URL}/send"
-        HEALTH_ENDPOINT = f"{SERVER_URL}/health"
-        PLATFORMS_ENDPOINT = f"{SERVER_URL}/platforms"
-        SWITCH_PLATFORM_ENDPOINT = f"{SERVER_URL}/switch-platform"
+    SEND_ENDPOINT = f"{SERVER_URL}/api/v2/chat"
+    HEALTH_ENDPOINT = f"{SERVER_URL}/health"
+    PLATFORMS_ENDPOINT = f"{SERVER_URL}/platforms"
+    SWITCH_PLATFORM_ENDPOINT = f"{SERVER_URL}/switch-platform"
 
     # Check health mode
     if args.health:

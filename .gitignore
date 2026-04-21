@@ -27,7 +27,8 @@ coverage.xml
 .pytest_cache/
 .mypy_cache/
 .hypothesis/
-
+node_modules/
+/node_modules
 # Environment variables
 .env
 .env.local
