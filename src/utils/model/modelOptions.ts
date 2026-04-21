@@ -317,6 +317,15 @@ function getQwen36PlusFreeOption(): ModelOption {
   }
 }
 
+function getQwenBridgeOption(): ModelOption {
+  return {
+    value: 'qwen/from-ehab',
+    label: 'Qwen (from Ehab)',
+    description: 'Qwen via Python Bridge · Web automation',
+    descriptionForModel: 'Qwen accessed through local Python bridge (web automation)',
+  }
+}
+
 function getGlm45AirFreeOption(): ModelOption {
   return {
     value: 'or_glm45air',
@@ -395,6 +404,18 @@ function getOpusPlanOption(): ModelOption {
 // @[MODEL LAUNCH]: Update the model picker lists below to include/reorder options for the new model.
 // Each user tier (ant, Max/Team Premium, Pro/Team Standard/Enterprise, PAYG 1P, PAYG 3P) has its own list.
 function getModelOptionsBase(fastMode = false): ModelOption[] {
+  // Qwen Bridge provider: show Qwen bridge model
+  if (getAPIProvider() === 'qwen_bridge') {
+    return [
+      {
+        value: null,
+        label: 'Default (recommended)',
+        description: 'Use Qwen via Python Bridge',
+      },
+      getQwenBridgeOption(),
+    ]
+  }
+
   // OpenRouter provider: show free models
   if (getAPIProvider() === 'openrouter') {
     return [
