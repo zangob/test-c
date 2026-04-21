@@ -1,88 +1,41 @@
 import Anthropic, { type ClientOptions } from '@anthropic-ai/sdk'
 import { randomUUID } from 'crypto'
-import type { GoogleAuth } from 'google-auth-library'
-import {
-  checkAndRefreshOAuthTokenIfNeeded,
-  getAnthropicApiKey,
-  getApiKeyFromApiKeyHelper,
-  getClaudeAIOAuthTokens,
-  isClaudeAISubscriber,
-  refreshAndGetAwsCredentials,
-  refreshGcpCredentialsIfNeeded,
-} from 'src/utils/auth.js'
-import { getUserAgent } from 'src/utils/http.js'
-import { getSmallFastModel } from 'src/utils/model/model.js'
 import {
   getAPIProvider,
   isFirstPartyAnthropicBaseUrl,
 } from 'src/utils/model/providers.js'
+import { getUserAgent } from 'src/utils/http.js'
 import { getProxyFetchOptions } from 'src/utils/proxy.js'
-import {
-  getIsNonInteractiveSession,
-  getSessionId,
-} from '../../bootstrap/state.js'
-import { getOauthConfig } from '../../constants/oauth.js'
+import { getSessionId } from '../../bootstrap/state.js'
 import { isDebugToStdErr, logForDebugging } from '../../utils/debug.js'
-import {
-  getAWSRegion,
-  getVertexRegionForModel,
-  isEnvTruthy,
-} from '../../utils/envUtils.js'
+import { isEnvTruthy } from '../../utils/envUtils.js'
 
-/**
- * Environment variables for different client types:
- *
- * Direct API:
- * - ANTHROPIC_API_KEY: Required for direct API access
- *
- * AWS Bedrock:
- * - AWS credentials configured via aws-sdk defaults
- * - AWS_REGION or AWS_DEFAULT_REGION: Sets the AWS region for all models (default: us-east-1)
- * - ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION: Optional. Override AWS region specifically for the small fast model (Haiku)
- *
- * Foundry (Azure):
- * - ANTHROPIC_FOUNDRY_RESOURCE: Your Azure resource name (e.g., 'my-resource')
- *   For the full endpoint: https://{resource}.services.ai.azure.com/anthropic/v1/messages
- * - ANTHROPIC_FOUNDRY_BASE_URL: Optional. Alternative to resource - provide full base URL directly
- *   (e.g., 'https://my-resource.services.ai.azure.com')
- *
- * Authentication (one of the following):
- * - ANTHROPIC_FOUNDRY_API_KEY: Your Microsoft Foundry API key (if using API key auth)
- * - Azure AD authentication: If no API key is provided, uses DefaultAzureCredential
- *   which supports multiple auth methods (environment variables, managed identity,
- *   Azure CLI, etc.). See: https://docs.microsoft.com/en-us/javascript/api/@azure/identity
- *
- * Vertex AI:
- * - Model-specific region variables (highest priority):
- *   - VERTEX_REGION_CLAUDE_3_5_HAIKU: Region for Claude 3.5 Haiku model
- *   - VERTEX_REGION_CLAUDE_HAIKU_4_5: Region for Claude Haiku 4.5 model
- *   - VERTEX_REGION_CLAUDE_3_5_SONNET: Region for Claude 3.5 Sonnet model
- *   - VERTEX_REGION_CLAUDE_3_7_SONNET: Region for Claude 3.7 Sonnet model
- * - CLOUD_ML_REGION: Optional. The default GCP region to use for all models
- *   If specific model region not specified above
- * - ANTHROPIC_VERTEX_PROJECT_ID: Required. Your GCP project ID
- * - Standard GCP credentials configured via google-auth-library
- *
- * Priority for determining region:
- * 1. Hardcoded model-specific environment variables
- * 2. Global CLOUD_ML_REGION variable
- * 3. Default region from config
- * 4. Fallback region (us-east5)
- */
-
+export const CLIENT_REQUEST_ID_HEADER = 'x-client-request-id';
 function createStderrLogger(): ClientOptions['logger'] {
   return {
-    error: (msg, ...args) =>
-      // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
-      console.error('[Anthropic SDK ERROR]', msg, ...args),
-    // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
+    error: (msg, ...args) => console.error('[Anthropic SDK ERROR]', msg, ...args),
     warn: (msg, ...args) => console.error('[Anthropic SDK WARN]', msg, ...args),
-    // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
     info: (msg, ...args) => console.error('[Anthropic SDK INFO]', msg, ...args),
-    debug: (msg, ...args) =>
-      // biome-ignore lint/suspicious/noConsole:: intentional console output -- SDK logger must use console
-      console.error('[Anthropic SDK DEBUG]', msg, ...args),
+    debug: (msg, ...args) => console.error('[Anthropic SDK DEBUG]', msg, ...args),
   }
+}
+
+function getCustomHeaders(): Record<string, string> {
+  const customHeaders: Record<string, string> = {}
+  const customHeadersEnv = process.env.ANTHROPIC_CUSTOM_HEADERS
+  if (!customHeadersEnv) return customHeaders
+  const headerStrings = customHeadersEnv.split(/\n|\r\n/)
+  for (const headerString of headerStrings) {
+    if (!headerString.trim()) continue
+    const colonIdx = headerString.indexOf(':')
+    if (colonIdx === -1) continue
+    const name = headerString.slice(0, colonIdx).trim()
+    const value = headerString.slice(colonIdx + 1).trim()
+    if (name) {
+      customHeaders[name] = value
+    }
+  }
+  return customHeaders
 }
 
 export async function getAnthropicClient({
@@ -101,6 +54,7 @@ export async function getAnthropicClient({
   const containerId = process.env.CLAUDE_CODE_CONTAINER_ID
   const remoteSessionId = process.env.CLAUDE_CODE_REMOTE_SESSION_ID
   const clientApp = process.env.CLAUDE_AGENT_SDK_CLIENT_APP
+
   const customHeaders = getCustomHeaders()
   const defaultHeaders: { [key: string]: string } = {
     'x-app': 'cli',
@@ -108,54 +62,127 @@ export async function getAnthropicClient({
     'X-Claude-Code-Session-Id': getSessionId(),
     ...customHeaders,
     ...(containerId ? { 'x-claude-remote-container-id': containerId } : {}),
-    ...(remoteSessionId
-      ? { 'x-claude-remote-session-id': remoteSessionId }
-      : {}),
-    // SDK consumers can identify their app/library for backend analytics
+    ...(remoteSessionId ? { 'x-claude-remote-session-id': remoteSessionId } : {}),
     ...(clientApp ? { 'x-client-app': clientApp } : {}),
   }
 
-  // Log API client configuration for HFI debugging
-  logForDebugging(
-    `[API:request] Creating client, ANTHROPIC_CUSTOM_HEADERS present: ${!!process.env.ANTHROPIC_CUSTOM_HEADERS}, has Authorization header: ${!!customHeaders['Authorization']}`,
-  )
-
-  // Add additional protection header if enabled via env var
-  const additionalProtectionEnabled = isEnvTruthy(
-    process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION,
-  )
+  const additionalProtectionEnabled = isEnvTruthy(process.env.CLAUDE_CODE_ADDITIONAL_PROTECTION)
   if (additionalProtectionEnabled) {
     defaultHeaders['x-anthropic-additional-protection'] = 'true'
   }
 
-  logForDebugging('[API:auth] OAuth token check starting')
-  await checkAndRefreshOAuthTokenIfNeeded()
-  logForDebugging('[API:auth] OAuth token check complete')
+  const resolvedFetch = fetchOverride ?? globalThis.fetch
 
-  // Configure API key headers (for Z.ai this will be overridden with authToken below)
-  if (!isClaudeAISubscriber()) {
-    await configureApiKeyHeaders(defaultHeaders, getIsNonInteractiveSession())
+  // ============================================================================
+  // QWEN BRIDGE PROVIDER - MUST BE FIRST
+  // ============================================================================
+  if (getAPIProvider() === 'qwen_bridge') {
+    logForDebugging('[Qwen Bridge] Using local Python bridge client')
+
+    const bridgeFetch: ClientOptions['fetch'] = async (url, init) => {
+      const urlStr = url.toString()
+
+      // Only intercept /v1/messages requests
+      if (urlStr.includes('/v1/messages')) {
+        try {
+          const body = JSON.parse(init?.body as string)
+          const lastUserMessage = body.messages
+            .filter((m: any) => m.role === 'user')
+            .pop()
+
+          if (!lastUserMessage) {
+            throw new Error('No user message found')
+          }
+
+          const messageContent = Array.isArray(lastUserMessage.content)
+            ? lastUserMessage.content.map((c: any) => c.text || '').join('')
+            : lastUserMessage.content
+
+          logForDebugging(`[Qwen Bridge] Sending to Python: ${messageContent.substring(0, 50)}...`)
+
+          // Call Python bridge
+          const response = await fetch('http://127.0.0.1:8000/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: messageContent,
+              platform: 'qwen',
+            }),
+            signal: AbortSignal.timeout(120000),
+          })
+
+          const data = await response.json()
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Bridge request failed')
+          }
+
+          logForDebugging(`[Qwen Bridge] Received response: ${data.response.substring(0, 50)}...`)
+
+          // Construct Anthropic-compatible response
+          const responseBody = {
+            id: `bridge-${randomUUID()}`,
+            type: 'message',
+            role: 'assistant',
+            content: [{ type: 'text', text: data.response }],
+            model: model || 'qwen/from Ehab',
+            stop_reason: 'end_turn',
+            stop_sequence: null,
+            usage: {
+              input_tokens: 0,
+              output_tokens: Math.ceil(data.response.length / 4),
+            },
+          }
+
+          return new Response(JSON.stringify(responseBody), {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'x-request-id': randomUUID(),
+            },
+          })
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown bridge error'
+          logForDebugging(`[Qwen Bridge] Error: ${errorMessage}`)
+
+          const errorBody = {
+            type: 'error',
+            error: { type: 'bridge_error', message: errorMessage },
+          }
+
+          return new Response(JSON.stringify(errorBody), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+      }
+
+      // Pass through other requests
+      return resolvedFetch(url, init)
+    }
+
+    const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+      apiKey: apiKey || 'qwen-bridge-dummy-key',
+      baseURL: 'https://api.anthropic.com', // Dummy URL, fetch interceptor handles everything
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+      dangerouslyAllowBrowser: true,
+      fetch: bridgeFetch,
+      fetchOptions: getProxyFetchOptions({ forAnthropicAPI: true }) as ClientOptions['fetchOptions'],
+      ...(isDebugToStdErr() && { logger: createStderrLogger() }),
+    }
+
+    return new Anthropic(clientConfig)
   }
 
-  const resolvedFetch = buildFetch(fetchOverride, source)
-
-  const ARGS = {
-    defaultHeaders,
-    maxRetries,
-    timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
-    dangerouslyAllowBrowser: true,
-    fetchOptions: getProxyFetchOptions({
-      forAnthropicAPI: true,
-    }) as ClientOptions['fetchOptions'],
-    ...(resolvedFetch && {
-      fetch: resolvedFetch,
-    }),
-  }
+  // ============================================================================
+  // POE PROVIDER
+  // ============================================================================
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_POE)) {
     const poeApiKey = process.env.POE_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey
     const poeBaseUrl = process.env.ANTHROPIC_BASE_URL || 'https://api.poe.com/v1'
-    
-    // Poe's /v1 endpoint is OpenAI-compatible, so we need to translate /messages to /chat/completions
+
     const poeFetch: ClientOptions['fetch'] = async (url, init) => {
       const urlStr = url.toString()
       if (urlStr.includes('/messages')) {
@@ -171,62 +198,44 @@ export async function getAnthropicClient({
           temperature: body.temperature,
           stop: body.stop_sequences,
         }
-        
+
         const newUrl = urlStr.replace('/messages', '/chat/completions')
-        
-        // Translate Anthropic headers to OpenAI/Poe headers
         const headers = new Headers(init?.headers)
-        const apiKey = headers.get('x-api-key')
-        if (apiKey) {
-          headers.set('Authorization', `Bearer ${apiKey}`)
+        const apiKeyValue = headers.get('x-api-key')
+        if (apiKeyValue) {
+          headers.set('Authorization', `Bearer ${apiKeyValue}`)
           headers.delete('x-api-key')
         }
-        
-        const newInit = {
-          ...init,
-          headers,
-          body: JSON.stringify(openAIParams),
-        }
-        
-        logForDebugging(`[Poe Debug] Sending request to: ${newUrl}`)
-        logForDebugging(`[Poe Debug] Headers: ${JSON.stringify(Object.fromEntries(headers.entries()))}`)
-        
+
+        const newInit = { ...init, headers, body: JSON.stringify(openAIParams) }
         const response = await (resolvedFetch || globalThis.fetch)(newUrl, newInit)
-        
+
         if (!response.ok) {
           try {
             const errorText = await response.clone().text()
-            logForDebugging(`[Poe API Error] ${response.status} ${response.statusText}: ${errorText}`)
-            // Also log to stderr so user can see it in terminal
-            console.error(`[Poe API Error] ${response.status} ${response.statusText}: ${errorText}`)
-          } catch (e) {
-            logForDebugging(`[Poe API Error] ${response.status} ${response.statusText}`)
-          }
+            console.error(`[Poe API Error] ${response.status}: ${errorText}`)
+          } catch (e) { }
         }
 
-        // If it's a stream, we need to translate OpenAI SSE to Anthropic SSE
         if (body.stream && response.ok) {
           const reader = response.body?.getReader()
           const encoder = new TextEncoder()
           const decoder = new TextDecoder()
-          
+
           const transformStream = new ReadableStream({
             async start(controller) {
               if (!reader) return controller.close()
-              
               let isFirst = true
               try {
                 while (true) {
                   const { done, value } = await reader.read()
                   if (done) break
-                  
                   const chunk = decoder.decode(value)
                   const lines = chunk.split('\n')
                   for (const line of lines) {
                     if (line.startsWith('data: ')) {
                       const dataStr = line.slice(6).trim()
                       if (dataStr === '[DONE]') continue
-                      
                       try {
                         const data = JSON.parse(dataStr)
                         const content = data.choices[0]?.delta?.content
@@ -237,9 +246,7 @@ export async function getAnthropicClient({
                           }
                           controller.enqueue(encoder.encode(`event: content_block_delta\ndata: ${JSON.stringify({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: content } })}\n\n`))
                         }
-                      } catch (e) {
-                        // Ignore parse errors for partial chunks
-                      }
+                      } catch (e) { }
                     }
                   }
                 }
@@ -249,7 +256,7 @@ export async function getAnthropicClient({
               }
             }
           })
-          
+
           return new Response(transformStream, {
             headers: response.headers,
             status: response.status,
@@ -268,299 +275,132 @@ export async function getAnthropicClient({
       maxRetries,
       timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
       dangerouslyAllowBrowser: true,
-      fetchOptions: getProxyFetchOptions({
-        forAnthropicAPI: true,
-      }) as ClientOptions['fetchOptions'],
+      fetchOptions: getProxyFetchOptions({ forAnthropicAPI: true }) as ClientOptions['fetchOptions'],
       fetch: poeFetch,
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
     }
     return new Anthropic(clientConfig)
   }
+
+  // ============================================================================
+  // OTHER PROVIDERS (OpenRouter, Z.ai, LM Studio, Bedrock, Vertex, Foundry)
+  // ============================================================================
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENROUTER)) {
     const openrouterApiKey = process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey
-    const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+    return new Anthropic({
       apiKey: openrouterApiKey || '',
       baseURL: process.env.ANTHROPIC_BASE_URL || 'https://openrouter.ai/api',
       defaultHeaders,
       maxRetries,
       timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
       dangerouslyAllowBrowser: true,
-      fetchOptions: getProxyFetchOptions({
-        forAnthropicAPI: true,
-      }) as ClientOptions['fetchOptions'],
+      fetchOptions: getProxyFetchOptions({ forAnthropicAPI: true }) as ClientOptions['fetchOptions'],
       ...(resolvedFetch && { fetch: resolvedFetch }),
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
-    }
-    return new Anthropic(clientConfig)
+    })
   }
+
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_ZAI)) {
     const zaiApiKey = process.env.ZAI_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey
-    const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+    return new Anthropic({
       apiKey: zaiApiKey || '',
       baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.z.ai/api/anthropic',
       defaultHeaders,
       maxRetries,
       timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
       dangerouslyAllowBrowser: true,
-      fetchOptions: getProxyFetchOptions({
-        forAnthropicAPI: true,
-      }) as ClientOptions['fetchOptions'],
+      fetchOptions: getProxyFetchOptions({ forAnthropicAPI: true }) as ClientOptions['fetchOptions'],
       ...(resolvedFetch && { fetch: resolvedFetch }),
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
-    }
-    return new Anthropic(clientConfig)
+    })
   }
+
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_LMSTUDIO)) {
     const lmstudioApiKey = process.env.LM_STUDIO_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey || 'not-needed'
-    const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+    return new Anthropic({
       apiKey: lmstudioApiKey,
-      baseURL: process.env.ANTHROPIC_BASE_URL || 'http://25.11.21.202:1234/',
+      baseURL: process.env.ANTHROPIC_BASE_URL || 'http://localhost:1234/',
       defaultHeaders,
       maxRetries,
       timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
       dangerouslyAllowBrowser: true,
-      fetchOptions: getProxyFetchOptions({
-        forAnthropicAPI: true,
-      }) as ClientOptions['fetchOptions'],
+      fetchOptions: getProxyFetchOptions({ forAnthropicAPI: true }) as ClientOptions['fetchOptions'],
       ...(resolvedFetch && { fetch: resolvedFetch }),
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
-    }
-    return new Anthropic(clientConfig)
+    })
   }
+
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK)) {
     const { AnthropicBedrock } = await import('@anthropic-ai/bedrock-sdk')
-    // Use region override for small fast model if specified
-    const awsRegion =
-      model === getSmallFastModel() &&
-        process.env.ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION
-        ? process.env.ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION
-        : getAWSRegion()
-
+    const awsRegion = process.env.AWS_REGION || 'us-east-1'
     const bedrockArgs: ConstructorParameters<typeof AnthropicBedrock>[0] = {
-      ...ARGS,
       awsRegion,
-      ...(isEnvTruthy(process.env.CLAUDE_CODE_SKIP_BEDROCK_AUTH) && {
-        skipAuth: true,
-      }),
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+      dangerouslyAllowBrowser: true,
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
     }
-
-    // Add API key authentication if available
     if (process.env.AWS_BEARER_TOKEN_BEDROCK) {
-      bedrockArgs.skipAuth = true
-      // Add the Bearer token for Bedrock API key authentication
       bedrockArgs.defaultHeaders = {
         ...bedrockArgs.defaultHeaders,
         Authorization: `Bearer ${process.env.AWS_BEARER_TOKEN_BEDROCK}`,
       }
-    } else if (!isEnvTruthy(process.env.CLAUDE_CODE_SKIP_BEDROCK_AUTH)) {
-      // Refresh auth and get credentials with cache clearing
-      const cachedCredentials = await refreshAndGetAwsCredentials()
-      if (cachedCredentials) {
-        bedrockArgs.awsAccessKey = cachedCredentials.accessKeyId
-        bedrockArgs.awsSecretKey = cachedCredentials.secretAccessKey
-        bedrockArgs.awsSessionToken = cachedCredentials.sessionToken
-      }
     }
-    // we have always been lying about the return type - this doesn't support batching or models
     return new AnthropicBedrock(bedrockArgs) as unknown as Anthropic
   }
+
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)) {
     const { AnthropicFoundry } = await import('@anthropic-ai/foundry-sdk')
-    // Determine Azure AD token provider based on configuration
-    // SDK reads ANTHROPIC_FOUNDRY_API_KEY by default
-    let azureADTokenProvider: (() => Promise<string>) | undefined
-    if (!process.env.ANTHROPIC_FOUNDRY_API_KEY) {
-      if (isEnvTruthy(process.env.CLAUDE_CODE_SKIP_FOUNDRY_AUTH)) {
-        // Mock token provider for testing/proxy scenarios (similar to Vertex mock GoogleAuth)
-        azureADTokenProvider = () => Promise.resolve('')
-      } else {
-        // Use real Azure AD authentication with DefaultAzureCredential
-        const {
-          DefaultAzureCredential: AzureCredential,
-          getBearerTokenProvider,
-        } = await import('@azure/identity')
-        azureADTokenProvider = getBearerTokenProvider(
-          new AzureCredential(),
-          'https://cognitiveservices.azure.com/.default',
-        )
-      }
-    }
-
     const foundryArgs: ConstructorParameters<typeof AnthropicFoundry>[0] = {
-      ...ARGS,
-      ...(azureADTokenProvider && { azureADTokenProvider }),
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+      dangerouslyAllowBrowser: true,
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
     }
-    // we have always been lying about the return type - this doesn't support batching or models
     return new AnthropicFoundry(foundryArgs) as unknown as Anthropic
   }
-  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)) {
-    // Refresh GCP credentials if gcpAuthRefresh is configured and credentials are expired
-    // This is similar to how we handle AWS credential refresh for Bedrock
-    if (!isEnvTruthy(process.env.CLAUDE_CODE_SKIP_VERTEX_AUTH)) {
-      await refreshGcpCredentialsIfNeeded()
-    }
 
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)) {
     const [{ AnthropicVertex }, { GoogleAuth }] = await Promise.all([
       import('@anthropic-ai/vertex-sdk'),
       import('google-auth-library'),
     ])
-    // TODO: Cache either GoogleAuth instance or AuthClient to improve performance
-    // Currently we create a new GoogleAuth instance for every getAnthropicClient() call
-    // This could cause repeated authentication flows and metadata server checks
-    // However, caching needs careful handling of:
-    // - Credential refresh/expiration
-    // - Environment variable changes (GOOGLE_APPLICATION_CREDENTIALS, project vars)
-    // - Cross-request auth state management
-    // See: https://github.com/googleapis/google-auth-library-nodejs/issues/390 for caching challenges
-
-    // Prevent metadata server timeout by providing projectId as fallback
-    // google-auth-library checks project ID in this order:
-    // 1. Environment variables (GCLOUD_PROJECT, GOOGLE_CLOUD_PROJECT, etc.)
-    // 2. Credential files (service account JSON, ADC file)
-    // 3. gcloud config
-    // 4. GCE metadata server (causes 12s timeout outside GCP)
-    //
-    // We only set projectId if user hasn't configured other discovery methods
-    // to avoid interfering with their existing auth setup
-
-    // Check project environment variables in same order as google-auth-library
-    // See: https://github.com/googleapis/google-auth-library-nodejs/blob/main/src/auth/googleauth.ts
-    const hasProjectEnvVar =
-      process.env['GCLOUD_PROJECT'] ||
-      process.env['GOOGLE_CLOUD_PROJECT'] ||
-      process.env['gcloud_project'] ||
-      process.env['google_cloud_project']
-
-    // Check for credential file paths (service account or ADC)
-    // Note: We're checking both standard and lowercase variants to be safe,
-    // though we should verify what google-auth-library actually checks
-    const hasKeyFile =
-      process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
-      process.env['google_application_credentials']
-
     const googleAuth = isEnvTruthy(process.env.CLAUDE_CODE_SKIP_VERTEX_AUTH)
-      ? ({
-        // Mock GoogleAuth for testing/proxy scenarios
-        getClient: () => ({
-          getRequestHeaders: () => ({}),
-        }),
-      } as unknown as GoogleAuth)
-      : new GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
-        // Only use ANTHROPIC_VERTEX_PROJECT_ID as last resort fallback
-        // This prevents the 12-second metadata server timeout when:
-        // - No project env vars are set AND
-        // - No credential keyfile is specified AND
-        // - ADC file exists but lacks project_id field
-        //
-        // Risk: If auth project != API target project, this could cause billing/audit issues
-        // Mitigation: Users can set GOOGLE_CLOUD_PROJECT to override
-        ...(hasProjectEnvVar || hasKeyFile
-          ? {}
-          : {
-            projectId: process.env.ANTHROPIC_VERTEX_PROJECT_ID,
-          }),
-      })
+      ? ({ getClient: () => ({ getRequestHeaders: () => ({}) }) } as any)
+      : new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] })
 
     const vertexArgs: ConstructorParameters<typeof AnthropicVertex>[0] = {
-      ...ARGS,
-      region: getVertexRegionForModel(model),
+      region: process.env.CLOUD_ML_REGION || 'us-central1',
       googleAuth,
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+      dangerouslyAllowBrowser: true,
       ...(isDebugToStdErr() && { logger: createStderrLogger() }),
     }
-    // we have always been lying about the return type - this doesn't support batching or models
     return new AnthropicVertex(vertexArgs) as unknown as Anthropic
   }
 
-  // Determine authentication method based on available tokens
+  // ============================================================================
+  // DEFAULT FIRST-PARTY ANTHROPIC
+  // ============================================================================
+  const { checkAndRefreshOAuthTokenIfNeeded } = await import('src/utils/auth.js')
+  const { isClaudeAISubscriber, getClaudeAIOAuthTokens, getAnthropicApiKey } = await import('src/utils/auth.js')
+
+  await checkAndRefreshOAuthTokenIfNeeded()
+
   const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
     apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
-    authToken: isClaudeAISubscriber()
-      ? getClaudeAIOAuthTokens()?.accessToken
-      : undefined,
-    // Set baseURL from OAuth config when using staging OAuth
-    ...(process.env.USER_TYPE === 'ant' &&
-      isEnvTruthy(process.env.USE_STAGING_OAUTH)
-      ? { baseURL: getOauthConfig().BASE_API_URL }
-      : {}),
-    ...ARGS,
+    authToken: isClaudeAISubscriber() ? getClaudeAIOAuthTokens()?.accessToken : undefined,
+    defaultHeaders,
+    maxRetries,
+    timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+    dangerouslyAllowBrowser: true,
+    fetchOptions: getProxyFetchOptions({ forAnthropicAPI: true }) as ClientOptions['fetchOptions'],
     ...(isDebugToStdErr() && { logger: createStderrLogger() }),
   }
 
   return new Anthropic(clientConfig)
-}
-
-async function configureApiKeyHeaders(
-  headers: Record<string, string>,
-  isNonInteractiveSession: boolean,
-): Promise<void> {
-  const token =
-    process.env.ANTHROPIC_AUTH_TOKEN ||
-    (await getApiKeyFromApiKeyHelper(isNonInteractiveSession))
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-}
-
-function getCustomHeaders(): Record<string, string> {
-  const customHeaders: Record<string, string> = {}
-  const customHeadersEnv = process.env.ANTHROPIC_CUSTOM_HEADERS
-
-  if (!customHeadersEnv) return customHeaders
-
-  // Split by newlines to support multiple headers
-  const headerStrings = customHeadersEnv.split(/\n|\r\n/)
-
-  for (const headerString of headerStrings) {
-    if (!headerString.trim()) continue
-
-    // Parse header in format "Name: Value" (curl style). Split on first `:`
-    // then trim — avoids regex backtracking on malformed long header lines.
-    const colonIdx = headerString.indexOf(':')
-    if (colonIdx === -1) continue
-    const name = headerString.slice(0, colonIdx).trim()
-    const value = headerString.slice(colonIdx + 1).trim()
-    if (name) {
-      customHeaders[name] = value
-    }
-  }
-
-  return customHeaders
-}
-
-export const CLIENT_REQUEST_ID_HEADER = 'x-client-request-id'
-
-function buildFetch(
-  fetchOverride: ClientOptions['fetch'],
-  source: string | undefined,
-): ClientOptions['fetch'] {
-  // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
-  const inner = fetchOverride ?? globalThis.fetch
-  // Only send to the first-party API — Bedrock/Vertex/Foundry don't log it
-  // and unknown headers risk rejection by strict proxies (inc-4029 class).
-  const injectClientRequestId =
-    getAPIProvider() === 'firstParty' && isFirstPartyAnthropicBaseUrl()
-  return (input, init) => {
-    // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
-    const headers = new Headers(init?.headers)
-    // Generate a client-side request ID so timeouts (which return no server
-    // request ID) can still be correlated with server logs by the API team.
-    // Callers that want to track the ID themselves can pre-set the header.
-    if (injectClientRequestId && !headers.has(CLIENT_REQUEST_ID_HEADER)) {
-      headers.set(CLIENT_REQUEST_ID_HEADER, randomUUID())
-    }
-    try {
-      // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
-      const url = input instanceof Request ? input.url : String(input)
-      const id = headers.get(CLIENT_REQUEST_ID_HEADER)
-      logForDebugging(
-        `[API REQUEST] ${new URL(url).pathname}${id ? ` ${CLIENT_REQUEST_ID_HEADER}=${id}` : ''} source=${source ?? 'unknown'}`,
-      )
-    } catch {
-      // never let logging crash the fetch
-    }
-    return inner(input, { ...init, headers })
-  }
 }

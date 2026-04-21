@@ -2,7 +2,6 @@
  * Python Bridge Client for Qwen Integration
  * Calls the local Python bridge server to interact with Qwen web interface
  */
-
 import { randomUUID } from 'crypto'
 
 export interface BridgeMessage {
@@ -78,7 +77,7 @@ export class PythonBridgeClient {
       return {
         error: {
           type: 'bridge_unavailable',
-          message: 'Python bridge server is not running. Please run: python save.py',
+          message: 'Python bridge server is not running. Please run: python save.py then python bridge_server.py',
         },
       }
     }
@@ -131,7 +130,7 @@ export class PythonBridgeClient {
         role: 'assistant',
         stop_reason: 'end_turn',
         usage: {
-          input_tokens: 0, // Bridge doesn't track tokens
+          input_tokens: 0,
           output_tokens: 0,
           total_tokens: 0,
         },
@@ -164,7 +163,6 @@ export class PythonBridgeClient {
       throw new Error(response.error.message)
     }
 
-    // Simulate streaming by yielding chunks
     yield {
       type: 'message_start',
       message: {
@@ -186,7 +184,6 @@ export class PythonBridgeClient {
       },
     }
 
-    // Stream the text character by character (simulated)
     const text = response.content[0].text || ''
     const chunkSize = 20
     for (let i = 0; i < text.length; i += chunkSize) {
@@ -199,7 +196,6 @@ export class PythonBridgeClient {
           text: chunk,
         },
       }
-      // Small delay to simulate streaming
       await new Promise(resolve => setTimeout(resolve, 10))
     }
 
@@ -214,7 +210,7 @@ export class PythonBridgeClient {
         stop_reason: response.stop_reason,
       },
       usage: {
-        output_tokens: Math.ceil(text.length / 4), // Rough estimate
+        output_tokens: Math.ceil(text.length / 4),
       },
     }
 

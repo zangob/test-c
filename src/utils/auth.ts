@@ -690,11 +690,11 @@ export function refreshAwsAuth(awsAuthRefresh: string): Promise<boolean> {
         const timedOut = signal === 'SIGTERM'
         const message = timedOut
           ? chalk.red(
-              'AWS auth refresh timed out after 3 minutes. Run your auth command manually in a separate terminal.',
-            )
+            'AWS auth refresh timed out after 3 minutes. Run your auth command manually in a separate terminal.',
+          )
           : chalk.red(
-              'Error running awsAuthRefresh (in settings or ~/.claude.json):',
-            )
+            'Error running awsAuthRefresh (in settings or ~/.claude.json):',
+          )
         // biome-ignore lint/suspicious/noConsole:: intentional console output
         console.error(message)
         authStatusManager.endAuthentication(false)
@@ -958,11 +958,11 @@ export function refreshGcpAuth(gcpAuthRefresh: string): Promise<boolean> {
         const timedOut = signal === 'SIGTERM'
         const message = timedOut
           ? chalk.red(
-              'GCP auth refresh timed out after 3 minutes. Run your auth command manually in a separate terminal.',
-            )
+            'GCP auth refresh timed out after 3 minutes. Run your auth command manually in a separate terminal.',
+          )
           : chalk.red(
-              'Error running gcpAuthRefresh (in settings or ~/.claude.json):',
-            )
+            'Error running gcpAuthRefresh (in settings or ~/.claude.json):',
+          )
         // biome-ignore lint/suspicious/noConsole:: intentional console output
         console.error(message)
         authStatusManager.endAuthentication(false)
@@ -1785,7 +1785,7 @@ export function getOtelHeadersFromHelper(): Record<string, string> {
   // Return cached headers if still valid (debounce)
   const debounceMs = parseInt(
     process.env.CLAUDE_CODE_OTEL_HEADERS_HELPER_DEBOUNCE_MS ||
-      DEFAULT_OTEL_HEADERS_DEBOUNCE_MS.toString(),
+    DEFAULT_OTEL_HEADERS_DEBOUNCE_MS.toString(),
   )
   if (
     cachedOtelHeaders &&
@@ -1873,6 +1873,9 @@ export function getAccountInformation() {
   // Only provide account info for first-party Anthropic API
   if (apiProvider !== 'firstParty') {
     return undefined
+  }
+  if (getAPIProvider() === 'qwen_bridge') {
+    return true
   }
   const { source: authTokenSource } = getAuthTokenSource()
   const accountInfo: UserAccountInfo = {}
@@ -2007,4 +2010,4 @@ export async function validateForceLoginOrg(): Promise<OrgValidationResult> {
   }
 }
 
-class GcpCredentialsTimeoutError extends Error {}
+class GcpCredentialsTimeoutError extends Error { }

@@ -5,6 +5,8 @@
  * literals with process.env.USER_TYPE === 'ant' for Bun to remove the codenames
  * during dead code elimination
  */
+import { getAPIProvider } from './providers.js'
+import { getBridgeClient } from '../../services/api/pythonBridgeClient.js'
 import { getMainLoopModelOverride } from '../../bootstrap/state.js'
 import {
   getSubscriptionType,
@@ -23,7 +25,6 @@ import { getModelStrings, resolveOverriddenModel } from './modelStrings.js'
 import { formatModelPricing, getOpus46CostTier } from '../modelCost.js'
 import { getSettings_DEPRECATED } from '../settings/settings.js'
 import type { PermissionMode } from '../permissions/PermissionMode.js'
-import { getAPIProvider } from './providers.js'
 import { LIGHTNING_BOLT } from '../../constants/figures.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
@@ -193,7 +194,7 @@ export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
 
   // Qwen Bridge provider defaults to qwen/from Ehab
   if (getAPIProvider() === 'qwen_bridge') {
-    return getModelStrings().qwen36PlusFree
+    return 'qwen/from Ehab'
   }
 
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
@@ -420,8 +421,9 @@ export function getPublicModelDisplayName(model: ModelName): string | null {
       return 'GLM 4.5 Air'
     case getModelStrings().minimaxM25:
       return 'MiniMax M2.5'
+    case 'qwen/from Ehab':
     case getModelStrings().qwen36PlusFree:
-      return 'Qwen 3.6 Plus (Free)'
+      return 'Qwen 3.6 Plus (Free) · Ehab Bridge'
     case getModelStrings().zAiGlm45AirFree:
       return 'GLM 4.5 Air (Free)'
     case getModelStrings().minimaxM25Free:
@@ -545,6 +547,9 @@ export function parseUserSpecifiedModel(
         return getModelStrings().zAiGlm45AirFree
       case 'or_minimax':
         return getModelStrings().minimaxM25Free
+      case 'qwen':
+      case 'ehab':
+        return 'qwen/from Ehab'
       default:
     }
   }
@@ -722,8 +727,8 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
   if (canonical.includes('minimax') && !canonical.includes(':free')) {
     return 'MiniMax M2.5'
   }
-  if (canonical.includes('qwen3.6-plus') || canonical.includes('qwen36plus')) {
-    return 'Qwen 3.6 Plus (Free)'
+  if (canonical.includes('qwen3.6-plus') || canonical.includes('qwen36plus') || canonical.includes('qwen/from ehab')) {
+    return 'Qwen 3.6 Plus (Free) · Ehab Bridge'
   }
   if (canonical.includes('glm-4.5-air') && canonical.includes('free')) {
     return 'GLM 4.5 Air (Free)'
@@ -737,4 +742,13 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
 
 export function normalizeModelStringForAPI(model: string): string {
   return model.replace(/\[(1|2)m\]/gi, '')
+}
+
+// Helper for Ant model config (placeholder if not defined elsewhere)
+function getAntModelOverrideConfig(): any {
+  return undefined
+}
+
+function resolveAntModel(model: string): any {
+  return undefined
 }
