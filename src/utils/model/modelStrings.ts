@@ -23,11 +23,20 @@ export type ModelStrings = Record<ModelKey, string>
 const MODEL_KEYS = Object.keys(ALL_MODEL_CONFIGS) as ModelKey[]
 
 function getBuiltinModelStrings(provider: APIProvider): ModelStrings {
-  const out = {} as ModelStrings
-  for (const key of MODEL_KEYS) {
-    out[key] = ALL_MODEL_CONFIGS[key][provider]
+  switch (provider) {
+    case 'qwen_bridge':
+      return {
+        qwen36PlusFree: 'qwen/from Ehab',
+        // Add other mappings if needed
+      } as ModelStrings;
+
+    default:
+      const out = {} as ModelStrings
+      for (const key of MODEL_KEYS) {
+        out[key] = ALL_MODEL_CONFIGS[key][provider]
+      }
+      return out
   }
-  return out
 }
 
 async function getBedrockModelStrings(): Promise<ModelStrings> {
@@ -137,6 +146,7 @@ export function getModelStrings(): ModelStrings {
   const ms = getModelStringsState()
   if (ms === null) {
     initModelStrings()
+
     // Bedrock path falls through here while the profile fetch runs in the
     // background — still honor overrides on the interim defaults.
     return applyModelOverrides(getBuiltinModelStrings(getAPIProvider()))

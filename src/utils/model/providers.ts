@@ -4,23 +4,26 @@ import { isEnvTruthy } from '../envUtils.js'
 export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry' | 'zai' | 'openrouter' | 'lmstudio' | 'poe' | 'qwen_bridge'
 
 export function getAPIProvider(): APIProvider {
+  if (process.env.CLAUDE_CODE_USE_QWEN_BRIDGE == "true") {
+    return 'qwen_bridge'
+  }
   return isEnvTruthy(process.env.CLAUDE_CODE_USE_POE)
-    ? 'poe'
+    ? 'poe'  // <-- CHANGE THIS from 'qwen_bridge' to 'poe'
     : isEnvTruthy(process.env.CLAUDE_CODE_USE_LMSTUDIO)
-    ? 'lmstudio'
-    : isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENROUTER)
-    ? 'openrouter'
-    : isEnvTruthy(process.env.CLAUDE_CODE_USE_ZAI)
-    ? 'zai'
-    : isEnvTruthy(process.env.CLAUDE_CODE_USE_QWEN_BRIDGE)
-      ? 'qwen_bridge'
-      : isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK)
-        ? 'bedrock'
-        : isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)
-          ? 'vertex'
-          : isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)
-            ? 'foundry'
-            : 'firstParty'
+      ? 'lmstudio'
+      : isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENROUTER)
+        ? 'openrouter'
+        : isEnvTruthy(process.env.CLAUDE_CODE_USE_ZAI)
+          ? 'zai'
+          : isEnvTruthy(process.env.CLAUDE_CODE_USE_QWEN_BRIDGE)
+            ? 'qwen_bridge'
+            : isEnvTruthy(process.env.CLAUDE_CODE_USE_BEDROCK)
+              ? 'bedrock'
+              : isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX)
+                ? 'vertex'
+                : isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY)
+                  ? 'foundry'
+                  : 'firstParty'
 }
 
 export function getAPIProviderForStatsig(): AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS {

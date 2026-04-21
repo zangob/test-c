@@ -254,8 +254,8 @@ export function getLogoDisplayData(): {
   const cwd = serverUrl
     ? `${displayPath} in ${serverUrl.replace(/^https?:\/\//, '')}`
     : displayPath
-  const billingType = isEnvTruthy(process.env.CLAUDE_CODE_USE_POE)
-    ? 'Poe Provider'
+  const billingType = isEnvTruthy(process.env.CLAUDE_CODE_USE_QWEN_BRIDGE)
+    ? 'Qwen Bridge'
     : isEnvTruthy(process.env.CLAUDE_CODE_USE_LMSTUDIO)
       ? 'Local Provider'
       : isClaudeAISubscriber()

@@ -258,7 +258,7 @@ export const QWEN36_PLUS_FREE_CONFIG = {
   openrouter: 'qwen/qwen3.6-plus:free',
   lmstudio: 'qwen/qwen3.6-plus:free',
   poe: 'qwen/qwen3.6-plus:free',
-  qwen_bridge: 'qwen/fromEhab',
+  qwen_bridge: 'qwen/from Ehab',  // Must match exactly
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_5_AIR_FREE_CONFIG = {
@@ -296,7 +296,7 @@ export const ALL_MODEL_CONFIGS = {
   zAiGlm45: Z_AI_GLM4_5_CONFIG,
   zAiGlm45Air: Z_AI_GLM4_5_AIR_CONFIG,
   minimaxM25: MINIMAX_M2_5_CONFIG,
-  qwen36PlusFree: QWEN36_PLUS_FREE_CONFIG,
+  qwen36PlusFree: QWEN36_PLUS_FREE_CONFIG,  // This has qwen_bridge: 'qwen/from Ehab' ✓
   zAiGlm45AirFree: Z_AI_GLM4_5_AIR_FREE_CONFIG,
   minimaxM25Free: MINIMAX_M2_5_FREE_CONFIG,
   haiku35: CLAUDE_3_5_HAIKU_CONFIG,
@@ -311,7 +311,6 @@ export const ALL_MODEL_CONFIGS = {
   opus45: CLAUDE_OPUS_4_5_CONFIG,
   opus46: CLAUDE_OPUS_4_6_CONFIG,
 } as const satisfies Record<string, ModelConfig>
-
 export type ModelKey = keyof typeof ALL_MODEL_CONFIGS
 
 /** Union of all canonical first-party model IDs, e.g. 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | … */

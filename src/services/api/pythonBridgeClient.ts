@@ -1,12 +1,24 @@
 /**
- * Python Bridge Client for Qwen Integration
- * Calls the local Python bridge server to interact with Qwen web interface
+ * Python Bridge Client for Qwen Integration - With Tool Support
  */
+
 import { randomUUID } from 'crypto'
+import * as fs from 'fs/promises'
+import * as path from 'path'
 
 export interface BridgeMessage {
   role: 'user' | 'assistant'
   content: string
+}
+
+export interface BridgeTool {
+  name: string
+  description: string
+  input_schema: {
+    type: 'object'
+    properties: Record<string, any>
+    required?: string[]
+  }
 }
 
 export interface BridgeUsage {
@@ -60,7 +72,8 @@ export class PythonBridgeClient {
 
   async sendMessage(
     messages: BridgeMessage[],
-    model: string = 'qwen/from-ehab'
+    model: string = 'qwen/from-ehab',
+    tools?: BridgeTool[]
   ): Promise<BridgeResponse | BridgeError> {
     if (!this.enabled) {
       return {
@@ -71,18 +84,16 @@ export class PythonBridgeClient {
       }
     }
 
-    // Check if bridge is healthy
     const isHealthy = await this.health()
     if (!isHealthy) {
       return {
         error: {
           type: 'bridge_unavailable',
-          message: 'Python bridge server is not running. Please run: python save.py then python bridge_server.py',
+          message: 'Python bridge server is not running. Please run: python save.py',
         },
       }
     }
 
-    // Get the last user message
     const lastUserMessage = messages.filter(m => m.role === 'user').pop()
     if (!lastUserMessage) {
       return {
@@ -102,8 +113,9 @@ export class PythonBridgeClient {
         body: JSON.stringify({
           message: lastUserMessage.content,
           platform: 'qwen',
+          tools: tools?.map(t => t.name), // Send tool names for Qwen to use
         }),
-        signal: AbortSignal.timeout(120000), // 2 minute timeout
+        signal: AbortSignal.timeout(120000),
       })
 
       const data = await response.json()
@@ -117,7 +129,31 @@ export class PythonBridgeClient {
         }
       }
 
-      // Convert bridge response to Anthropic-compatible format
+      // Handle tool calls from Qwen
+      if (data.tool_calls && Array.isArray(data.tool_calls)) {
+        const toolContents = await Promise.all(
+          data.tool_calls.map(async (toolCall: any) => {
+            const result = await this.executeTool(toolCall.name, toolCall.input)
+            return {
+              type: 'tool_use' as const,
+              id: toolCall.id || `toolu-${randomUUID()}`,
+              name: toolCall.name,
+              input: toolCall.input,
+            }
+          })
+        )
+
+        return {
+          id: `bridge-${randomUUID()}`,
+          model: model,
+          content: toolContents,
+          role: 'assistant',
+          stop_reason: 'tool_use',
+          usage: { input_tokens: 0, output_tokens: 0, total_tokens: 0 },
+        }
+      }
+
+      // Regular text response
       return {
         id: `bridge-${randomUUID()}`,
         model: model,
@@ -146,18 +182,75 @@ export class PythonBridgeClient {
     }
   }
 
+  private async executeTool(toolName: string, input: any): Promise<any> {
+    // Execute file operations locally
+    switch (toolName) {
+      case 'Read':
+        return await fs.readFile(input.path, 'utf-8')
+      case 'Write':
+        await fs.mkdir(path.dirname(input.path), { recursive: true })
+        await fs.writeFile(input.path, input.content, 'utf-8')
+        return { success: true }
+      case 'Edit':
+        const content = await fs.readFile(input.path, 'utf-8')
+        const edited = content.replace(
+          new RegExp(input.old_string, 'g'),
+          input.new_string
+        )
+        await fs.writeFile(input.path, edited, 'utf-8')
+        return { success: true }
+      case 'Grep':
+        // Simple grep implementation
+        const files = await this.findFiles(input.path_pattern || '.')
+        const results: string[] = []
+        for (const file of files) {
+          try {
+            const content = await fs.readFile(file, 'utf-8')
+            const lines = content.split('\n')
+            lines.forEach((line, idx) => {
+              if (line.includes(input.pattern)) {
+                results.push(`${file}:${idx + 1}: ${line}`)
+              }
+            })
+          } catch { }
+        }
+        return results.join('\n')
+      case 'Glob':
+        return await this.findFiles(input.pattern || '**/*')
+      default:
+        throw new Error(`Unknown tool: ${toolName}`)
+    }
+  }
+
+  private async findFiles(pattern: string): Promise<string[]> {
+    // Simple glob implementation
+    const results: string[] = []
+    const searchDir = pattern.split('/')[0] || '.'
+
+    async function search(dir: string) {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name)
+          if (entry.isDirectory() && !entry.name.startsWith('.')) {
+            await search(fullPath)
+          } else if (entry.isFile()) {
+            results.push(fullPath)
+          }
+        }
+      } catch { }
+    }
+
+    await search(searchDir)
+    return results
+  }
+
   async *streamMessage(
     messages: BridgeMessage[],
-    model: string = 'qwen/from-ehab'
-  ): AsyncGenerator<{
-    type: 'content_block_start' | 'content_block_delta' | 'content_block_stop' | 'message_start' | 'message_delta' | 'message_stop'
-    index?: number
-    content_block?: { type: 'text'; text: string }
-    delta?: { type: 'text_delta'; text: string }
-    usage_output_tokens?: number
-    stop_reason?: string
-  }> {
-    const response = await this.sendMessage(messages, model)
+    model: string = 'qwen/from-ehab',
+    tools?: BridgeTool[]
+  ): AsyncGenerator<any> {
+    const response = await this.sendMessage(messages, model, tools)
 
     if ('error' in response) {
       throw new Error(response.error.message)
@@ -175,33 +268,35 @@ export class PythonBridgeClient {
       },
     }
 
-    yield {
-      type: 'content_block_start',
-      index: 0,
-      content_block: {
-        type: 'text',
-        text: '',
-      },
-    }
+    for (let i = 0; i < response.content.length; i++) {
+      const block = response.content[i]
 
-    const text = response.content[0].text || ''
-    const chunkSize = 20
-    for (let i = 0; i < text.length; i += chunkSize) {
-      const chunk = text.slice(i, i + chunkSize)
       yield {
-        type: 'content_block_delta',
-        index: 0,
-        delta: {
-          type: 'text_delta',
-          text: chunk,
-        },
+        type: 'content_block_start',
+        index: i,
+        content_block: block,
       }
-      await new Promise(resolve => setTimeout(resolve, 10))
-    }
 
-    yield {
-      type: 'content_block_stop',
-      index: 0,
+      if (block.type === 'text' && block.text) {
+        const chunkSize = 20
+        for (let j = 0; j < block.text.length; j += chunkSize) {
+          const chunk = block.text.slice(j, j + chunkSize)
+          yield {
+            type: 'content_block_delta',
+            index: i,
+            delta: {
+              type: 'text_delta',
+              text: chunk,
+            },
+          }
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+      }
+
+      yield {
+        type: 'content_block_stop',
+        index: i,
+      }
     }
 
     yield {
@@ -210,7 +305,7 @@ export class PythonBridgeClient {
         stop_reason: response.stop_reason,
       },
       usage: {
-        output_tokens: Math.ceil(text.length / 4),
+        output_tokens: Math.ceil((response.content[0]?.text || '').length / 4),
       },
     }
 

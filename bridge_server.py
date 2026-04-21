@@ -144,6 +144,9 @@ class BridgeServer:
     # =========================================================================
     # CORE METHOD: send_message
     # =========================================================================
+    # =========================================================================
+    # CORE METHOD: send_message (MUST BE INDENTED INSIDE CLASS)
+    # =========================================================================
     async def send_message(self, message: str, platform: Optional[str] = None) -> str:
         if not self.page:
             raise RuntimeError("Browser not initialized.")
@@ -167,20 +170,42 @@ class BridgeServer:
             textarea_selector = self.selectors["textarea"]
             await self.page.wait_for_selector(textarea_selector, state="visible", timeout=10000)
             
-            # 3. Type and Send
-            await self.page.locator(textarea_selector).focus()
+            # 3. CRITICAL: Wait a moment to ensure full message is received
             await asyncio.sleep(0.5)
+            
+            # 4. Focus and Clear
+            await self.page.locator(textarea_selector).focus()
+            await asyncio.sleep(0.3)
+            
+            # Clear using keyboard (more reliable than fill)
             await self.page.keyboard.press("Control+a")
             await asyncio.sleep(0.2)
             await self.page.keyboard.press("Delete")
             await asyncio.sleep(0.2)
-            await self.page.keyboard.type(message, delay=50)  # Slower typing looks more human
-            await asyncio.sleep(0.3)
+            
+            # Verify it's empty
+            try:
+                current_value = await self.page.locator(textarea_selector).input_value()
+                if current_value:
+                    logger.warning("⚠️ Input not empty, clearing again...")
+                    await self.page.keyboard.press("Control+a")
+                    await self.page.keyboard.press("Delete")
+                    await asyncio.sleep(0.2)
+            except:
+                pass # Textarea might not support input_value()
+            
+            # 5. Type the COMPLETE message
+            logger.info(f"⌨️ Typing full message ({len(message)} chars)...")
+            await self.page.locator(textarea_selector).fill(message)
+            
+            # 6. CRITICAL: Wait to ensure all characters are typed
+            await asyncio.sleep(0.5)
+            
+            # 7. Send
             await self.page.keyboard.press("Enter")
-
             logger.info("✅ Message sent. Waiting for AI state changes...")
 
-            # 4. WAIT FOR STOP BUTTON (AI Thinking)
+            # 8. WAIT FOR STOP BUTTON (AI Thinking)
             stop_selector = self.selectors.get("stop_button", "button.stop-button")
             try:
                 await self.page.wait_for_selector(stop_selector, state="attached", timeout=10000)
@@ -188,14 +213,14 @@ class BridgeServer:
             except PlaywrightTimeout:
                 logger.warning("⚠️ Stop button not found, checking for response directly...")
 
-            # 5. WAIT FOR STOP BUTTON TO DISAPPEAR (AI Finished)
+            # 9. WAIT FOR STOP BUTTON TO DISAPPEAR (AI Finished)
             try:
                 await self.page.wait_for_selector(stop_selector, state="detached", timeout=90000)
                 logger.info("✅ Stop button disappeared (AI finished)")
             except PlaywrightTimeout:
                 logger.warning("⏰ Timeout waiting for stop button to disappear")
 
-            # 6. EXTRA WAIT FOR NEW MESSAGE COUNT
+            # 10. EXTRA WAIT FOR NEW MESSAGE COUNT
             max_wait = 15
             start_time = asyncio.get_event_loop().time()
             while asyncio.get_event_loop().time() - start_time < max_wait:
@@ -210,7 +235,7 @@ class BridgeServer:
             
             await asyncio.sleep(2)  # Final render wait
 
-            # 7. Scrape
+            # 11. Scrape
             response_text = await self._scrape_latest_response()
             if not response_text.strip():
                 return "Error: Empty response."
@@ -237,6 +262,14 @@ class BridgeServer:
             logger.error(f"Scraping error: {e}")
             return ""
 
+    async def switch_platform(self, platform: str):
+        urls = {"qwen": "https://chat.qwen.ai/", "chatgpt": "https://chat.openai.com/"}
+        if platform not in urls: 
+            raise ValueError("Unsupported platform")
+        await self.page.goto(urls[platform], wait_until="domcontentloaded")
+        self.current_url = urls[platform]
+        self.selectors = self._get_selectors_for_url(self.current_url)
+        await asyncio.sleep(3)
     async def switch_platform(self, platform: str):
         urls = {"qwen": "https://chat.qwen.ai/", "chatgpt": "https://chat.openai.com/"}
         if platform not in urls: 
