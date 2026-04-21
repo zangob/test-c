@@ -110,7 +110,8 @@ export function PreflightStep(t0) {
         onSuccess();
       } else {
         if (result && !result.success) {
-          const timer = setTimeout(_temp, 100);
+          // Proceed anyway after a delay so the user can see the error
+          const timer = setTimeout(onSuccess, 3000);
           return () => clearTimeout(timer);
         }
       }

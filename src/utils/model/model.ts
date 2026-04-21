@@ -181,6 +181,11 @@ export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
     return getModelStrings().qwen36PlusFree
   }
 
+  // LM Studio provider defaults to ANTHROPIC_MODEL or a generic string
+  if (getAPIProvider() === 'lmstudio') {
+    return process.env.ANTHROPIC_MODEL || 'lmstudio-model'
+  }
+
   // Z.ai provider defaults to GLM-5
   if (getAPIProvider() === 'zai') {
     return getModelStrings().zAiGlm5
@@ -481,8 +486,11 @@ export function getPublicModelName(model: ModelName): string {
  * @param modelInput The model alias or name provided by the user.
  */
 export function parseUserSpecifiedModel(
-  modelInput: ModelName | ModelAlias,
+  modelInput: ModelName | ModelAlias | null | undefined,
 ): ModelName {
+  if (!modelInput) {
+    return 'unknown-model'
+  }
   const modelInputTrimmed = modelInput.trim()
   const normalizedModel = modelInputTrimmed.toLowerCase()
 

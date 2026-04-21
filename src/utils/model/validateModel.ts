@@ -46,6 +46,11 @@ export async function validateModel(
     return { valid: true }
   }
 
+  // Skip validation for LM Studio
+  if (process.env.CLAUDE_CODE_USE_LMSTUDIO === '1') {
+    return { valid: true }
+  }
+
   // Check cache first
   if (validModelCache.has(normalizedModel)) {
     return { valid: true }

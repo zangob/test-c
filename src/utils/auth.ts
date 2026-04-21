@@ -117,10 +117,11 @@ export function isAnthropicAuthEnabled(): boolean {
     isEnvTruthy(process.env.CLAUDE_CODE_USE_VERTEX) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_FOUNDRY) ||
     isEnvTruthy(process.env.CLAUDE_CODE_USE_ZAI) ||
-    isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENROUTER)
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENROUTER) ||
+    isEnvTruthy(process.env.CLAUDE_CODE_USE_LMSTUDIO)
 
   // Diagnostic: log 3P provider check results
-  logForDebugging(`[AUTH] isAnthropicAuthEnabled: is3P=${is3P}, BEDROCK=${process.env.CLAUDE_CODE_USE_BEDROCK}, VERTEX=${process.env.CLAUDE_CODE_USE_VERTEX}, FOUNDRY=${process.env.CLAUDE_CODE_USE_FOUNDRY}, ZAI=${process.env.CLAUDE_CODE_USE_ZAI}, OPENROUTER=${process.env.CLAUDE_CODE_USE_OPENROUTER}`, { level: 'error' })
+  logForDebugging(`[AUTH] isAnthropicAuthEnabled: is3P=${is3P}, BEDROCK=${process.env.CLAUDE_CODE_USE_BEDROCK}, VERTEX=${process.env.CLAUDE_CODE_USE_VERTEX}, FOUNDRY=${process.env.CLAUDE_CODE_USE_FOUNDRY}, ZAI=${process.env.CLAUDE_CODE_USE_ZAI}, OPENROUTER=${process.env.CLAUDE_CODE_USE_OPENROUTER}, LMSTUDIO=${process.env.CLAUDE_CODE_USE_LMSTUDIO}`, { level: 'error' })
 
   // Check if user has configured an external API key source
   // This allows externally-provided API keys to work (without requiring proxy configuration)

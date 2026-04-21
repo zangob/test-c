@@ -151,6 +151,131 @@ export async function getAnthropicClient({
       fetch: resolvedFetch,
     }),
   }
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_POE)) {
+    const poeApiKey = process.env.POE_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey
+    const poeBaseUrl = process.env.ANTHROPIC_BASE_URL || 'https://api.poe.com/v1'
+    
+    // Poe's /v1 endpoint is OpenAI-compatible, so we need to translate /messages to /chat/completions
+    const poeFetch: ClientOptions['fetch'] = async (url, init) => {
+      const urlStr = url.toString()
+      if (urlStr.includes('/messages')) {
+        const body = JSON.parse(init?.body as string)
+        const openAIParams = {
+          model: body.model,
+          messages: body.messages.map((m: any) => ({
+            role: m.role,
+            content: Array.isArray(m.content) ? m.content.map((c: any) => c.text || '').join('') : m.content
+          })),
+          stream: body.stream,
+          max_tokens: body.max_tokens,
+          temperature: body.temperature,
+          stop: body.stop_sequences,
+        }
+        
+        const newUrl = urlStr.replace('/messages', '/chat/completions')
+        
+        // Translate Anthropic headers to OpenAI/Poe headers
+        const headers = new Headers(init?.headers)
+        const apiKey = headers.get('x-api-key')
+        if (apiKey) {
+          headers.set('Authorization', `Bearer ${apiKey}`)
+          headers.delete('x-api-key')
+        }
+        
+        const newInit = {
+          ...init,
+          headers,
+          body: JSON.stringify(openAIParams),
+        }
+        
+        logForDebugging(`[Poe Debug] Sending request to: ${newUrl}`)
+        logForDebugging(`[Poe Debug] Headers: ${JSON.stringify(Object.fromEntries(headers.entries()))}`)
+        
+        const response = await (resolvedFetch || globalThis.fetch)(newUrl, newInit)
+        
+        if (!response.ok) {
+          try {
+            const errorText = await response.clone().text()
+            logForDebugging(`[Poe API Error] ${response.status} ${response.statusText}: ${errorText}`)
+            // Also log to stderr so user can see it in terminal
+            console.error(`[Poe API Error] ${response.status} ${response.statusText}: ${errorText}`)
+          } catch (e) {
+            logForDebugging(`[Poe API Error] ${response.status} ${response.statusText}`)
+          }
+        }
+
+        // If it's a stream, we need to translate OpenAI SSE to Anthropic SSE
+        if (body.stream && response.ok) {
+          const reader = response.body?.getReader()
+          const encoder = new TextEncoder()
+          const decoder = new TextDecoder()
+          
+          const transformStream = new ReadableStream({
+            async start(controller) {
+              if (!reader) return controller.close()
+              
+              let isFirst = true
+              try {
+                while (true) {
+                  const { done, value } = await reader.read()
+                  if (done) break
+                  
+                  const chunk = decoder.decode(value)
+                  const lines = chunk.split('\n')
+                  for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                      const dataStr = line.slice(6).trim()
+                      if (dataStr === '[DONE]') continue
+                      
+                      try {
+                        const data = JSON.parse(dataStr)
+                        const content = data.choices[0]?.delta?.content
+                        if (content) {
+                          if (isFirst) {
+                            controller.enqueue(encoder.encode(`event: message_start\ndata: ${JSON.stringify({ type: 'message_start', message: { id: data.id, role: 'assistant', content: [], model: data.model, usage: { input_tokens: 0, output_tokens: 0 } } })}\n\n`))
+                            isFirst = false
+                          }
+                          controller.enqueue(encoder.encode(`event: content_block_delta\ndata: ${JSON.stringify({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: content } })}\n\n`))
+                        }
+                      } catch (e) {
+                        // Ignore parse errors for partial chunks
+                      }
+                    }
+                  }
+                }
+                controller.enqueue(encoder.encode('event: message_stop\ndata: {"type":"message_stop"}\n\n'))
+              } finally {
+                controller.close()
+              }
+            }
+          })
+          
+          return new Response(transformStream, {
+            headers: response.headers,
+            status: response.status,
+            statusText: response.statusText,
+          })
+        }
+        return response
+      }
+      return (resolvedFetch || globalThis.fetch)(url, init)
+    }
+
+    const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+      apiKey: poeApiKey || '',
+      baseURL: poeBaseUrl,
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+      dangerouslyAllowBrowser: true,
+      fetchOptions: getProxyFetchOptions({
+        forAnthropicAPI: true,
+      }) as ClientOptions['fetchOptions'],
+      fetch: poeFetch,
+      ...(isDebugToStdErr() && { logger: createStderrLogger() }),
+    }
+    return new Anthropic(clientConfig)
+  }
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENROUTER)) {
     const openrouterApiKey = process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey
     const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
@@ -173,6 +298,23 @@ export async function getAnthropicClient({
     const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
       apiKey: zaiApiKey || '',
       baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.z.ai/api/anthropic',
+      defaultHeaders,
+      maxRetries,
+      timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),
+      dangerouslyAllowBrowser: true,
+      fetchOptions: getProxyFetchOptions({
+        forAnthropicAPI: true,
+      }) as ClientOptions['fetchOptions'],
+      ...(resolvedFetch && { fetch: resolvedFetch }),
+      ...(isDebugToStdErr() && { logger: createStderrLogger() }),
+    }
+    return new Anthropic(clientConfig)
+  }
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_LMSTUDIO)) {
+    const lmstudioApiKey = process.env.LM_STUDIO_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_API_KEY || apiKey || 'not-needed'
+    const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
+      apiKey: lmstudioApiKey,
+      baseURL: process.env.ANTHROPIC_BASE_URL || 'http://25.11.21.202:1234/',
       defaultHeaders,
       maxRetries,
       timeout: parseInt(process.env.API_TIMEOUT_MS || String(600 * 1000), 10),

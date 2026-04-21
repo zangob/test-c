@@ -827,6 +827,13 @@ export function getAssistantMessageFromError(
     const isExternalSource =
       source === 'ANTHROPIC_API_KEY' || source === 'apiKeyHelper'
 
+    if (isEnvTruthy(process.env.CLAUDE_CODE_USE_LMSTUDIO)) {
+      return createAssistantAPIErrorMessage({
+        error: 'authentication_failed',
+        content: `LM Studio Error: ${error.message}`,
+      })
+    }
+
     return createAssistantAPIErrorMessage({
       error: 'authentication_failed',
       content: isExternalSource
@@ -938,11 +945,21 @@ export function getAssistantMessageFromError(
  * Returns a model name suggestion, or undefined if no suggestion is applicable.
  */
 function get3PModelFallbackSuggestion(model: string): string | undefined {
-  if (getAPIProvider() === 'firstParty') {
+  const provider = getAPIProvider()
+  if (provider === 'firstParty') {
     return undefined
   }
   // @[MODEL LAUNCH]: Add a fallback suggestion chain for the new model → previous version for 3P
   const m = model.toLowerCase()
+  
+  if (provider === 'poe') {
+    // If it's a Codex model, suggest the standard one
+    if (m.includes('codex')) {
+      return 'gpt53codex'
+    }
+    return getModelStrings().sonnet35
+  }
+
   // If the failing model looks like an Opus 4.6 variant, suggest the default Opus (4.1 for 3P)
   if (m.includes('opus-4-6') || m.includes('opus_4_6')) {
     return getModelStrings().opus41

@@ -13,6 +13,8 @@ export const CLAUDE_3_7_SONNET_CONFIG = {
   foundry: 'claude-3-7-sonnet',
   zai: 'claude-3-7-sonnet-20250219',
   openrouter: 'claude-3-7-sonnet-20250219',
+  lmstudio: 'claude-3-7-sonnet-20250219',
+  poe: 'claude-3-7-sonnet-20250219',
 } as const satisfies ModelConfig
 
 export const CLAUDE_3_5_V2_SONNET_CONFIG = {
@@ -22,6 +24,8 @@ export const CLAUDE_3_5_V2_SONNET_CONFIG = {
   foundry: 'claude-3-5-sonnet',
   zai: 'claude-3-5-sonnet-20241022',
   openrouter: 'claude-3-5-sonnet-20241022',
+  lmstudio: 'claude-3-5-sonnet-20241022',
+  poe: 'claude-3-5-sonnet-20241022',
 } as const satisfies ModelConfig
 
 export const CLAUDE_3_5_HAIKU_CONFIG = {
@@ -31,6 +35,8 @@ export const CLAUDE_3_5_HAIKU_CONFIG = {
   foundry: 'claude-3-5-haiku',
   zai: 'claude-3-5-haiku-20241022',
   openrouter: 'claude-3-5-haiku-20241022',
+  lmstudio: 'claude-3-5-haiku-20241022',
+  poe: 'claude-3-5-haiku-20241022',
 } as const satisfies ModelConfig
 
 export const CLAUDE_HAIKU_4_5_CONFIG = {
@@ -40,6 +46,8 @@ export const CLAUDE_HAIKU_4_5_CONFIG = {
   foundry: 'claude-haiku-4-5',
   zai: 'claude-haiku-4-5-20251001',
   openrouter: 'claude-haiku-4-5-20251001',
+  lmstudio: 'claude-haiku-4-5-20251001',
+  poe: 'claude-haiku-4-5-20251001',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_CONFIG = {
@@ -49,6 +57,8 @@ export const CLAUDE_SONNET_4_CONFIG = {
   foundry: 'claude-sonnet-4',
   zai: 'claude-sonnet-4-20250514',
   openrouter: 'claude-sonnet-4-20250514',
+  lmstudio: 'claude-sonnet-4-20250514',
+  poe: 'claude-sonnet-4-20250514',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_5_CONFIG = {
@@ -58,6 +68,8 @@ export const CLAUDE_SONNET_4_5_CONFIG = {
   foundry: 'claude-sonnet-4-5',
   zai: 'claude-sonnet-4-5-20250929',
   openrouter: 'claude-sonnet-4-5-20250929',
+  lmstudio: 'claude-sonnet-4-5-20250929',
+  poe: 'claude-sonnet-4-5-20250929',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_CONFIG = {
@@ -67,6 +79,8 @@ export const CLAUDE_OPUS_4_CONFIG = {
   foundry: 'claude-opus-4',
   zai: 'claude-opus-4-20250514',
   openrouter: 'claude-opus-4-20250514',
+  lmstudio: 'claude-opus-4-20250514',
+  poe: 'claude-opus-4-20250514',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_1_CONFIG = {
@@ -76,6 +90,8 @@ export const CLAUDE_OPUS_4_1_CONFIG = {
   foundry: 'claude-opus-4-1',
   zai: 'claude-opus-4-1-20250805',
   openrouter: 'claude-opus-4-1-20250805',
+  lmstudio: 'claude-opus-4-1-20250805',
+  poe: 'claude-opus-4-1-20250805',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_5_CONFIG = {
@@ -85,6 +101,8 @@ export const CLAUDE_OPUS_4_5_CONFIG = {
   foundry: 'claude-opus-4-5',
   zai: 'claude-opus-4-5-20251101',
   openrouter: 'claude-opus-4-5-20251101',
+  lmstudio: 'claude-opus-4-5-20251101',
+  poe: 'claude-opus-4-5-20251101',
 } as const satisfies ModelConfig
 
 export const CLAUDE_OPUS_4_6_CONFIG = {
@@ -94,6 +112,8 @@ export const CLAUDE_OPUS_4_6_CONFIG = {
   foundry: 'claude-opus-4-6',
   zai: 'claude-opus-4-6',
   openrouter: 'claude-opus-4-6',
+  lmstudio: 'claude-opus-4-6',
+  poe: 'claude-opus-4-6',
 } as const satisfies ModelConfig
 
 export const CLAUDE_SONNET_4_6_CONFIG = {
@@ -103,6 +123,8 @@ export const CLAUDE_SONNET_4_6_CONFIG = {
   foundry: 'claude-sonnet-4-6',
   zai: 'claude-sonnet-4-6',
   openrouter: 'claude-sonnet-4-6',
+  lmstudio: 'claude-sonnet-4-6',
+  poe: 'claude-sonnet-4-6',
 } as const satisfies ModelConfig
 
 export const KIMI_K2_5_CONFIG = {
@@ -112,6 +134,8 @@ export const KIMI_K2_5_CONFIG = {
   foundry: 'moonshotai/kimi-k2.5',
   zai: 'moonshotai/kimi-k2.5',
   openrouter: 'moonshotai/kimi-k2.5',
+  lmstudio: 'moonshotai/kimi-k2.5',
+  poe: 'moonshotai/kimi-k2.5',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_3_CODEX_CONFIG = {
@@ -121,6 +145,8 @@ export const OPENAI_GPT_5_3_CODEX_CONFIG = {
   foundry: 'openai/gpt5.3-codex',
   zai: 'openai/gpt5.3-codex',
   openrouter: 'openai/gpt-5.3-codex',
+  lmstudio: 'openai/gpt-5.3-codex',
+  poe: 'gpt-5.3-codex-spark',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_4_CONFIG = {
@@ -130,6 +156,8 @@ export const OPENAI_GPT_5_4_CONFIG = {
   foundry: 'openai/gpt-5.4',
   zai: 'openai/gpt-5.4',
   openrouter: 'openai/gpt-5.4',
+  lmstudio: 'openai/gpt-5.4',
+  poe: 'gpt-5.4',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_5_1_CONFIG = {
@@ -139,6 +167,8 @@ export const OPENAI_GPT_5_1_CONFIG = {
   foundry: 'openai/gpt-5.1',
   zai: 'openai/gpt-5.1',
   openrouter: 'openai/gpt-5.1',
+  lmstudio: 'openai/gpt-5.1',
+  poe: 'gpt-5.1',
 } as const satisfies ModelConfig
 
 export const OPENAI_GPT_OSS_120B_CONFIG = {
@@ -148,6 +178,8 @@ export const OPENAI_GPT_OSS_120B_CONFIG = {
   foundry: 'openai/gpt-oss-120b',
   zai: 'openai/gpt-oss-120b',
   openrouter: 'openai/gpt-oss-120b',
+  lmstudio: 'openai/gpt-oss-120b',
+  poe: 'gpt-oss-120b',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM5_CONFIG = {
@@ -157,6 +189,8 @@ export const Z_AI_GLM5_CONFIG = {
   foundry: 'z-ai/glm5',
   zai: 'glm-5',
   openrouter: 'z-ai/glm-5',
+  lmstudio: 'z-ai/glm-5',
+  poe: 'z-ai/glm-5',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_7_CONFIG = {
@@ -166,6 +200,8 @@ export const Z_AI_GLM4_7_CONFIG = {
   foundry: 'glm-4.7',
   zai: 'glm-4.7',
   openrouter: 'z-ai/glm-4.7',
+  lmstudio: 'z-ai/glm-4.7',
+  poe: 'z-ai/glm-4.7',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM5_TURBO_CONFIG = {
@@ -175,6 +211,8 @@ export const Z_AI_GLM5_TURBO_CONFIG = {
   foundry: 'glm-5-turbo',
   zai: 'glm-5-turbo',
   openrouter: 'z-ai/glm-5-turbo',
+  lmstudio: 'z-ai/glm-5-turbo',
+  poe: 'z-ai/glm-5-turbo',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_5_CONFIG = {
@@ -184,6 +222,8 @@ export const Z_AI_GLM4_5_CONFIG = {
   foundry: 'glm-4.5',
   zai: 'glm-4.5',
   openrouter: 'z-ai/glm-4.5',
+  lmstudio: 'z-ai/glm-4.5',
+  poe: 'z-ai/glm-4.5',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_5_AIR_CONFIG = {
@@ -193,6 +233,8 @@ export const Z_AI_GLM4_5_AIR_CONFIG = {
   foundry: 'glm-4.5-Air',
   zai: 'glm-4.5-Air',
   openrouter: 'z-ai/glm-4.5-air',
+  lmstudio: 'z-ai/glm-4.5-air',
+  poe: 'z-ai/glm-4.5-air',
 } as const satisfies ModelConfig
 
 export const MINIMAX_M2_5_CONFIG = {
@@ -202,6 +244,8 @@ export const MINIMAX_M2_5_CONFIG = {
   foundry: 'minimaxai/minimax-m2.5',
   zai: 'minimaxai/minimax-m2.5',
   openrouter: 'minimax/minimax-m2.5',
+  lmstudio: 'minimax/minimax-m2.5',
+  poe: 'minimaxai/minimax-m2.5',
 } as const satisfies ModelConfig
 
 // OpenRouter free models
@@ -212,6 +256,8 @@ export const QWEN36_PLUS_FREE_CONFIG = {
   foundry: 'qwen/qwen3.6-plus:free',
   zai: 'qwen/qwen3.6-plus:free',
   openrouter: 'qwen/qwen3.6-plus:free',
+  lmstudio: 'qwen/qwen3.6-plus:free',
+  poe: 'qwen/qwen3.6-plus:free',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_5_AIR_FREE_CONFIG = {
@@ -221,6 +267,8 @@ export const Z_AI_GLM4_5_AIR_FREE_CONFIG = {
   foundry: 'z-ai/glm-4.5-air:free',
   zai: 'z-ai/glm-4.5-air:free',
   openrouter: 'z-ai/glm-4.5-air:free',
+  lmstudio: 'z-ai/glm-4.5-air:free',
+  poe: 'z-ai/glm-4.5-air:free',
 } as const satisfies ModelConfig
 
 export const MINIMAX_M2_5_FREE_CONFIG = {
@@ -230,6 +278,8 @@ export const MINIMAX_M2_5_FREE_CONFIG = {
   foundry: 'minimax/minimax-m2.5:free',
   zai: 'minimax/minimax-m2.5:free',
   openrouter: 'minimax/minimax-m2.5:free',
+  lmstudio: 'minimax/minimax-m2.5:free',
+  poe: 'minimax/minimax-m2.5:free',
 } as const satisfies ModelConfig
 
 // @[MODEL LAUNCH]: Register the new config here.
