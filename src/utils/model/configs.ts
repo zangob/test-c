@@ -258,6 +258,7 @@ export const QWEN36_PLUS_FREE_CONFIG = {
   openrouter: 'qwen/qwen3.6-plus:free',
   lmstudio: 'qwen/qwen3.6-plus:free',
   poe: 'qwen/qwen3.6-plus:free',
+  qwen_bridge: 'qwen/from Ehab',
 } as const satisfies ModelConfig
 
 export const Z_AI_GLM4_5_AIR_FREE_CONFIG = {

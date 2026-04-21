@@ -191,6 +191,11 @@ export function getDefaultMainLoopModelSetting(): ModelName | ModelAlias {
     return getModelStrings().zAiGlm5
   }
 
+  // Qwen Bridge provider defaults to qwen/from Ehab
+  if (getAPIProvider() === 'qwen_bridge') {
+    return getModelStrings().qwen36PlusFree
+  }
+
   // Ants default to defaultModel from flag config, or Opus 1M if not configured
   if (process.env.USER_TYPE === 'ant') {
     return (
